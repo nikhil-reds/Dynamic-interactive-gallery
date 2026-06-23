@@ -59,7 +59,13 @@ export default function PreviewPane({ template }: PreviewPaneProps) {
     ).join("\n");
 
     const pdfElements = assets.pdfs.map(
-      (pdf) => `<div class="gallery-item pdf-item"><iframe src="${origin}/demo/pdf/${pdf}"></iframe></div>`
+      (pdf) => `<div class="gallery-item pdf-item" data-pdf="${origin}/demo/pdf/${pdf}">
+        <canvas class="pdf-canvas"></canvas>
+        <div class="pdf-overlay">
+          <svg class="pdf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          <span class="pdf-title">${pdf}</span>
+        </div>
+      </div>`
     ).join("\n");
 
     const allElements = [imageElements, videoElements, pdfElements].filter(Boolean).join("\n");
@@ -67,11 +73,68 @@ export default function PreviewPane({ template }: PreviewPaneProps) {
     // Replace placeholders
     let finalHtml = template.html;
 
+    const pdfStyles = `
+/* PDF Thumbnail Styles */
+.pdf-item {
+  position: relative;
+  background: #1e293b;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.pdf-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.pdf-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.4) 60%, rgba(15, 23, 42, 0.7) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0.85;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+.pdf-item:hover .pdf-overlay {
+  opacity: 1;
+}
+.pdf-icon {
+  width: 40px;
+  height: 40px;
+  color: #ef4444;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+.pdf-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f1f5f9;
+  text-align: center;
+  max-width: 90%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+`;
+
     // Replace CSS placeholder or inject into head
     if (finalHtml.includes("{{css}}")) {
-      finalHtml = finalHtml.replace(/\{\{css\}\}/g, template.css);
+      finalHtml = finalHtml.replace(/\{\{css\}\}/g, template.css + pdfStyles);
     } else {
-      finalHtml = finalHtml.replace("</head>", `<style>${template.css}</style></head>`);
+      finalHtml = finalHtml.replace("</head>", `<style>${template.css + pdfStyles}</style></head>`);
     }
 
     // Replace content placeholders
@@ -92,6 +155,49 @@ export default function PreviewPane({ template }: PreviewPaneProps) {
     if (!template.html.includes("{{gallery}}") && !template.html.includes("{{images}}") && !template.html.includes("{{videos}}") && !template.html.includes("{{pdfs}}")) {
       finalHtml = finalHtml.replace("</body>", `<div class="gallery-fallback">${allElements}</div></body>`);
     }
+
+    const pdfScripts = `
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<script>
+  (function() {
+    function initPdfThumbnails() {
+      if (typeof pdfjsLib === 'undefined') return;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+      
+      document.querySelectorAll('.pdf-item').forEach(item => {
+        const pdfUrl = item.getAttribute('data-pdf');
+        const canvas = item.querySelector('.pdf-canvas');
+        if (!pdfUrl || !canvas) return;
+        
+        pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+          return pdf.getPage(1);
+        }).then(page => {
+          const viewport = page.getViewport({ scale: 2.0 });
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          
+          const renderContext = {
+            canvasContext: context,
+            viewport: viewport
+          };
+          return page.render(renderContext).promise;
+        }).catch(err => {
+          console.error("PDF.js render error:", err);
+        });
+      });
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(initPdfThumbnails, 100);
+    } else {
+      window.addEventListener('DOMContentLoaded', initPdfThumbnails);
+    }
+  })();
+</script>
+`;
+
+    finalHtml = finalHtml.replace("</body>", `${pdfScripts}</body>`);
 
     // Inject Custom JS if defined
     if (template.js?.trim()) {
@@ -247,7 +353,7 @@ export default function PreviewPane({ template }: PreviewPaneProps) {
               title="Interactive Gallery Preview"
               srcDoc={generatedHtml}
               className="w-full h-full border-none"
-              sandbox="allow-scripts"
+              sandbox="allow-scripts allow-same-origin"
             />
           </div>
         </div>
