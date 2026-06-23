@@ -235,10 +235,10 @@ a:hover {
 /* Clay Card Styling */
 .clay-card {
   position: absolute;
-  width: 160px;
-  height: 220px;
-  left: -80px;
-  top: -110px;
+  width: 110px;
+  height: 150px;
+  left: -55px;
+  top: -75px;
   background: var(--clay-base);
   border-radius: 24px;
   padding: 8px;
@@ -371,10 +371,10 @@ a:hover {
     text-align: center;
   }
   .clay-card {
-    width: 120px;
-    height: 160px;
-    left: -60px;
-    top: -80px;
+    width: 80px;
+    height: 110px;
+    left: -40px;
+    top: -55px;
   }
 }
 `,
