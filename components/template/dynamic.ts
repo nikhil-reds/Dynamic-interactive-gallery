@@ -253,7 +253,7 @@ body {
 }
 
 .gallery-item:hover {
-  transform: translate3d(calc(-50% + var(--hover-x, 0px)), calc(-50% + var(--hover-y, 0px)), 220px) scale(1.4) !important;
+  transform: translate3d(calc(-50% + var(--hover-x, 0px)), calc(-50% + var(--hover-y, 0px)), 60px) scale(1.12) rotate(3deg) !important;
   z-index: 999999 !important;
   border-color: rgba(255, 255, 255, 0.8) !important;
   box-shadow: 0 35px 90px rgba(0, 0, 0, 0.6) !important;
