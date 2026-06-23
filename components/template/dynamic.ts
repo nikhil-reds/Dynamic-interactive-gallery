@@ -161,7 +161,7 @@ body {
   width: clamp(110px, 14vw, 200px);
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  border-radius: 50%;
+  border-radius: clamp(16px, 2vw, 26px);
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: #111827;
   box-shadow:
