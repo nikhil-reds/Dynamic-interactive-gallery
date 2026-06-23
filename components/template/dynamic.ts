@@ -68,7 +68,7 @@ body {
   min-height: 540px;
   overflow: hidden;
   border-radius: clamp(24px, 4vw, 46px);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: none;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
     rgba(9, 12, 18, 0.86);
@@ -158,10 +158,10 @@ body {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: clamp(68px, 8.2vw, 120px);
-  aspect-ratio: 3 / 4;
+  width: clamp(110px, 14vw, 200px);
+  aspect-ratio: 1 / 1;
   overflow: hidden;
-  border-radius: clamp(16px, 2vw, 26px);
+  border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: #111827;
   box-shadow:
