@@ -252,6 +252,14 @@ body {
   display: none !important;
 }
 
+.gallery-item:hover {
+  transform: translate3d(calc(-50% + var(--hover-x, 0px)), calc(-50% + var(--hover-y, 0px)), 220px) scale(1.4) !important;
+  z-index: 999999 !important;
+  border-color: rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 35px 90px rgba(0, 0, 0, 0.6) !important;
+  filter: none !important;
+}
+
 .gallery-item.is-focused .item-caption {
   opacity: 1;
   transform: translateY(-2px);
@@ -421,15 +429,15 @@ body {
       card.targetRotateX = orbitalTilt + (proximity ? clamp(-dy / 13, -18, 18) : 0);
       card.targetRotateY = sideTilt + (proximity ? clamp(dx / 13, -22, 22) : 0);
       card.targetOpacity = card.revealed ? 0.36 + depth * 0.58 + proximity * 0.22 : 0;
-      card.targetBlur = card.revealed ? Math.max(0, (1 - depth) * 5.2 - proximity * 3.2) : 10;
+      card.targetBlur = 0;
     });
 
     state.forEach((card) => {
       const isFocused = card.index === strongestIndex && strongestProximity > 0.1;
-      const dofBlur = strongestProximity > 0.16 && !isFocused ? 5.2 * strongestProximity : 0;
+      const dofBlur = 0;
 
-      card.targetBlur += dofBlur;
-      card.targetOpacity = Math.max(0.18, card.targetOpacity - dofBlur * 0.1);
+      card.targetBlur = 0;
+      card.targetOpacity = Math.max(0.18, card.targetOpacity);
       card.item.style.zIndex = String(300 + Math.round(card.targetZ) + (isFocused ? 500 : 0));
       card.item.classList.toggle("is-focused", isFocused);
 
@@ -461,12 +469,14 @@ body {
       springTo(card, "rotateX", "vrx", card.targetRotateX, 0.12, 0.7);
       springTo(card, "rotateY", "vry", card.targetRotateY, 0.12, 0.7);
       springTo(card, "opacity", "vo", card.targetOpacity, 0.12, 0.74);
-      springTo(card, "blur", "vb", card.targetBlur, 0.14, 0.68);
+      springTo(card, "blur", "vb", 0, 0.14, 0.68);
 
+      card.item.style.setProperty('--hover-x', card.x.toFixed(2) + 'px');
+      card.item.style.setProperty('--hover-y', card.y.toFixed(2) + 'px');
       card.item.style.opacity = card.opacity.toFixed(3);
-      const brightness = clamp(1.08 - card.blur * 0.06 + card.z / 1200, 0.62, 1.18);
-      const saturation = clamp(1.12 - card.blur * 0.055, 0.62, 1.16);
-      card.item.style.filter = "blur(" + card.blur.toFixed(2) + "px) brightness(" + brightness.toFixed(2) + ") saturate(" + saturation.toFixed(2) + ")";
+      const brightness = clamp(1.08 + card.z / 1200, 0.62, 1.18);
+      const saturation = 1.12;
+      card.item.style.filter = "brightness(" + brightness.toFixed(2) + ") saturate(" + saturation.toFixed(2) + ")";
       card.item.style.transform =
         "translate3d(calc(-50% + " + card.x.toFixed(2) + "px), calc(-50% + " + card.y.toFixed(2) + "px), " + card.z.toFixed(2) + "px) " +
         "rotateX(" + card.rotateX.toFixed(2) + "deg) " +
