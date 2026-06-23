@@ -29,11 +29,6 @@ export const clayTemplate: Template = {
     </svg>
   </section>
 
-  <section class="journey-section">
-    <div class="constellation" id="constellation">
-    </div>
-  </section>
-
   <div id="rawGallery" style="display: none;">
     {{gallery}}
   </div>
@@ -490,60 +485,6 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
     });
   }
 
-  // Generate Scatter/Constellation in Journey Section
-  const constellation = document.getElementById("constellation");
-  if (constellation) {
-    // Find all images and canvases from our sphere cards
-    const images = Array.from(document.querySelectorAll('.clay-card img, .clay-card canvas')).map(el => {
-      if (el.tagName.toLowerCase() === 'img') {
-        return el.src;
-      } else if (el.tagName.toLowerCase() === 'canvas') {
-        // Draw standard representation or fetch dataset if we want
-        return '';
-      }
-      return '';
-    }).filter(Boolean);
-
-    // If no images (e.g. only videos/pdfs), fallback to placeholder or skip
-    if (images.length > 0) {
-      const scatterPositions = [
-        { top: "10%", left: "15%" },
-        { top: "20%", left: "80%" },
-        { top: "60%", left: "10%" },
-        { top: "75%", left: "85%" },
-        { top: "85%", left: "30%" },
-        { top: "15%", left: "50%" }
-      ];
-
-      scatterPositions.forEach((pos, i) => {
-        const card = document.createElement("div");
-        card.classList.add("clay-card", "constellation-card");
-        card.style.top = pos.top;
-        card.style.left = pos.left;
-
-        const rot = (Math.random() - 0.5) * 40;
-        card.style.transform = \`rotate(\${rot}deg) scale(0.8)\`;
-
-        const img = document.createElement("img");
-        img.src = images[i % images.length];
-        card.appendChild(img);
-
-        constellation.appendChild(card);
-      });
-
-      gsap.to(".constellation-card", {
-        y: -100,
-        ease: "none",
-        stagger: 0.1,
-        scrollTrigger: {
-          trigger: ".journey-section",
-          start: "top bottom",
-          end: "bottom top",
-          scrub: true
-        }
-      });
-    }
-  }
 })();
 `
 };
