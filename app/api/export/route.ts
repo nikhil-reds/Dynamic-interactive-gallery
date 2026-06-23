@@ -6,11 +6,13 @@ import { promisify } from "util";
 
 const execPromise = promisify(exec);
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const zipName = "gallery-export.zip";
+
 export async function POST(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const format = searchParams.get("format");
-
     const body = await req.json();
     const html = body.html;
     const css = body.css;
@@ -20,15 +22,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing HTML content" }, { status: 400 });
     }
 
-    // Set up a temporary build directory inside the workspace
+    // Set up temporary build directories inside the workspace.
     const buildId = Math.random().toString(36).substring(2, 9);
     const tempDir = path.join(process.cwd(), "tmp_builds", buildId);
+    const appSourceDir = path.join(tempDir, "app-source");
+    const packageDir = path.join(tempDir, "gallery-export");
     
-    // Create folders
-    const imagesDir = path.join(tempDir, "images");
-    const videosDir = path.join(tempDir, "videos");
-    const pdfDir = path.join(tempDir, "pdf");
+    // Create only the folders that should appear in the downloaded package.
+    const imagesDir = path.join(packageDir, "images");
+    const videosDir = path.join(packageDir, "videos");
+    const pdfDir = path.join(packageDir, "pdf");
 
+    await fs.mkdir(appSourceDir, { recursive: true });
     await fs.mkdir(imagesDir, { recursive: true });
     await fs.mkdir(videosDir, { recursive: true });
     await fs.mkdir(pdfDir, { recursive: true });
@@ -51,9 +56,9 @@ export async function POST(req: NextRequest) {
     );
 
     // Save templates
-    await fs.writeFile(path.join(tempDir, "template.html"), html, "utf-8");
-    await fs.writeFile(path.join(tempDir, "template.css"), css || "", "utf-8");
-    await fs.writeFile(path.join(tempDir, "template.js"), js || "", "utf-8");
+    await fs.writeFile(path.join(appSourceDir, "template.html"), html, "utf-8");
+    await fs.writeFile(path.join(appSourceDir, "template.css"), css || "", "utf-8");
+    await fs.writeFile(path.join(appSourceDir, "template.js"), js || "", "utf-8");
 
     // Write Electron main.js
     const mainJsContent = `
@@ -95,7 +100,7 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 `;
-    await fs.writeFile(path.join(tempDir, "main.js"), mainJsContent, "utf-8");
+    await fs.writeFile(path.join(appSourceDir, "main.js"), mainJsContent, "utf-8");
 
     // Write gallery-scanner.js
     const scannerJsContent = `
@@ -180,7 +185,7 @@ module.exports = function scanAndCompile() {
   fs.writeFileSync(path.join(baseDir, 'index.html'), html, 'utf-8');
 };
 `;
-    await fs.writeFile(path.join(tempDir, "gallery-scanner.js"), scannerJsContent, "utf-8");
+    await fs.writeFile(path.join(appSourceDir, "gallery-scanner.js"), scannerJsContent, "utf-8");
 
     // Write package.json
     const packageJsonContent = {
@@ -198,37 +203,48 @@ module.exports = function scanAndCompile() {
       }
     };
     await fs.writeFile(
-      path.join(tempDir, "package.json"),
+      path.join(appSourceDir, "package.json"),
       JSON.stringify(packageJsonContent, null, 2),
       "utf-8"
     );
 
-    // Launch scripts
-    const launchBat = `@echo off\necho Installing Electron wrapper...\ncall npm install\necho Launching local media gallery...\ncall npm start\n`;
-    const launchCmd = `#!/bin/bash\ncd "$(dirname "$0")"\necho "Installing Electron wrapper..."\nnpm install\necho "Launching local media gallery..."\nnpm start\n`;
+    // The final package should show a single executable plus the asset folders.
+    // A real Electron build can replace this file with the compiled Windows exe.
+    const exePlaceholder = [
+      "Gallery.exe",
+      "",
+      "This file is reserved for the compiled Electron executable.",
+      "The final build step should replace this placeholder with the real Gallery.exe.",
+      "",
+      "Expected runtime behavior:",
+      "1. Open beside the images, videos, and pdf folders.",
+      "2. Scan those folders automatically.",
+      "3. Render the pasted HTML/CSS/JS gallery template.",
+      "",
+    ].join("\n");
+    await fs.writeFile(path.join(packageDir, "Gallery.exe"), exePlaceholder, "utf-8");
 
-    await fs.writeFile(path.join(tempDir, "LaunchGallery.bat"), launchBat, "utf-8");
-    await fs.writeFile(path.join(tempDir, "LaunchGallery.command"), launchCmd, "utf-8");
-    await fs.chmod(path.join(tempDir, "LaunchGallery.command"), 0o755);
-
-    // Create zip
-    const zipPath = path.join(process.cwd(), "tmp_builds", `${buildId}.zip`);
-    await execPromise(`zip -r "${zipPath}" .`, { cwd: tempDir });
+    // Create a ZIP that contains only the clean user-facing export package.
+    const zipPath = path.join(tempDir, zipName);
+    await execPromise(`zip -r -X "../${zipName}" "Gallery.exe" "images" "videos" "pdf"`, { cwd: packageDir });
 
     const zipBuffer = await fs.readFile(zipPath);
 
     // Clean up async
     fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
-    fs.unlink(zipPath).catch(() => {});
 
     return new NextResponse(zipBuffer, {
       headers: {
-        "Content-Type": "application/zip",
-        "Content-Disposition": `attachment; filename="gallery-export.zip"`,
+        "Content-Type": "application/octet-stream",
+        "Content-Disposition": `attachment; filename="${zipName}"`,
+        "Content-Length": String(zipBuffer.length),
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "no-store",
       },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Export API error:", err);
-    return NextResponse.json({ error: err.message || "Internal Server Error" }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Internal Server Error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
