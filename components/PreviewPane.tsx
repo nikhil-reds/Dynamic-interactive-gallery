@@ -7,27 +7,11 @@ interface PreviewPaneProps {
   template: Template;
 }
 
-const MOCK_IMAGES = [
-  { url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&auto=format&fit=crop", name: "Abstract Poster Art" },
-  { url: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&auto=format&fit=crop", name: "Mountain Ridge View" },
-  { url: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=800&auto=format&fit=crop", name: "Sunlight Forest Path" },
-  { url: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&auto=format&fit=crop", name: "Misty Valley Morning" },
-  { url: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&auto=format&fit=crop", name: "Ancient Forest Canopy" },
-  { url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop", name: "Golden Sunset Beach" },
-  { url: "https://images.unsplash.com/photo-1472214222541-d510753a4907?w=800&auto=format&fit=crop", name: "Peaceful Green Meadows" },
-  { url: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&auto=format&fit=crop", name: "Deep Red Autumn Leaves" },
-  { url: "https://images.unsplash.com/photo-1565120130276-dfbd9a7a3ad7?w=800&auto=format&fit=crop", name: "Urban Architecture Glass" },
-  { url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop", name: "Yosemite Valley Stream" }
-];
-
-const MOCK_VIDEOS = [
-  { url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4", name: "Demo MP4 Clip" }
-];
-
-const MOCK_PDFS = [
-  { url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", name: "W3C Sample PDF" },
-  { url: "https://pdfobject.com/pdf/sample.pdf", name: "PDFObject Sample Reference" }
-];
+interface ScannedAssets {
+  images: string[];
+  videos: string[];
+  pdfs: string[];
+}
 
 export default function PreviewPane({ template }: PreviewPaneProps) {
   const [viewportWidth, setViewportWidth] = useState<"desktop" | "tablet" | "mobile">("desktop");
@@ -35,22 +19,50 @@ export default function PreviewPane({ template }: PreviewPaneProps) {
   const [viewCode, setViewCode] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState("");
+  
+  const [assets, setAssets] = useState<ScannedAssets>({
+    images: [],
+    videos: [],
+    pdfs: []
+  });
+
+  // Fetch the latest assets list from the public/demo folder
+  useEffect(() => {
+    async function fetchAssets() {
+      try {
+        const res = await fetch("/api/scan");
+        if (res.ok) {
+          const data = await res.json();
+          setAssets({
+            images: data.images || [],
+            videos: data.videos || [],
+            pdfs: data.pdfs || []
+          });
+        }
+      } catch (err) {
+        console.error("Failed to scan public folder assets", err);
+      }
+    }
+    fetchAssets();
+  }, []);
 
   useEffect(() => {
-    // Generate inner gallery elements (using standard format specified in README)
-    const imageElements = MOCK_IMAGES.map(
-      (img) => `<div class="gallery-item img-item"><img src="${img.url}" alt="${img.name}" /><div class="item-caption">${img.name}</div></div>`
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+
+    // Generate inner gallery elements (using paths relative to the public root)
+    const imageElements = assets.images.map(
+      (img) => `<div class="gallery-item img-item"><img src="${origin}/demo/images/${img}" alt="${img}" /><div class="item-caption">${img}</div></div>`
     ).join("\n");
 
-    const videoElements = MOCK_VIDEOS.map(
-      (vid) => `<div class="gallery-item video-item"><video src="${vid.url}" controls></video><div class="item-caption">${vid.name}</div></div>`
+    const videoElements = assets.videos.map(
+      (vid) => `<div class="gallery-item video-item"><video src="${origin}/demo/video/${vid}" controls></video><div class="item-caption">${vid}</div></div>`
     ).join("\n");
 
-    const pdfElements = MOCK_PDFS.map(
-      (pdf) => `<div class="gallery-item pdf-item"><iframe src="${pdf.url}"></iframe><div class="item-caption">${pdf.name}</div></div>`
+    const pdfElements = assets.pdfs.map(
+      (pdf) => `<div class="gallery-item pdf-item"><iframe src="${origin}/demo/pdf/${pdf}"></iframe><div class="item-caption">${pdf}</div></div>`
     ).join("\n");
 
-    const allElements = [imageElements, videoElements, pdfElements].join("\n");
+    const allElements = [imageElements, videoElements, pdfElements].filter(Boolean).join("\n");
 
     // Replace placeholders
     let finalHtml = template.html;
@@ -87,7 +99,7 @@ export default function PreviewPane({ template }: PreviewPaneProps) {
     }
 
     setGeneratedHtml(finalHtml);
-  }, [template]);
+  }, [template, assets]);
 
   const handleExportZip = async () => {
     if (isExporting) return;
@@ -140,7 +152,7 @@ export default function PreviewPane({ template }: PreviewPaneProps) {
         <div>
           <h2 className="text-2xl font-bold text-white tracking-wide">Live Preview Viewer</h2>
           <p className="text-slate-400 text-sm mt-1">
-            Displaying layout <span className="text-indigo-400 font-semibold">{template.name}</span> with 10 demo images, 2 demo PDFs, and 1 demo video.
+            Displaying layout <span className="text-indigo-400 font-semibold">{template.name}</span> with {assets.images.length} images, {assets.pdfs.length} PDFs, and {assets.videos.length} videos from the public folder.
           </p>
         </div>
 
