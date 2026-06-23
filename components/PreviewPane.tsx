@@ -147,8 +147,8 @@ export default function PreviewPane({ template }: PreviewPaneProps) {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+    <div className="h-screen flex flex-col p-6 md:p-8 space-y-6 overflow-hidden animate-fade-in">
+      <div className="flex items-center justify-between shrink-0">
         <div>
           <h2 className="text-2xl font-bold text-white tracking-wide">Live Preview Viewer</h2>
           <p className="text-slate-400 text-sm mt-1">
@@ -168,7 +168,7 @@ export default function PreviewPane({ template }: PreviewPaneProps) {
           <button
             disabled={isExporting}
             onClick={handleExportZip}
-            className={`p-2 bg-slate-900 border border-white/5 hover:border-indigo-500/30 text-slate-300 hover:text-white rounded-xl transition-all cursor-pointer flex items-center justify-center disabled:opacity-50`}
+            className="p-2 bg-slate-900 border border-white/5 hover:border-indigo-500/30 text-slate-300 hover:text-white rounded-xl transition-all cursor-pointer flex items-center justify-center disabled:opacity-50"
             title="Export ZIP Package"
           >
             {isExporting ? (
@@ -215,8 +215,8 @@ export default function PreviewPane({ template }: PreviewPaneProps) {
       </div>
 
       {viewCode ? (
-        <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden flex flex-col">
-          <div className="bg-slate-950/60 p-3 border-b border-white/5 flex items-center justify-between">
+        <div className="flex-1 min-h-0 rounded-2xl overflow-hidden flex flex-col bg-slate-950/40 border border-white/5">
+          <div className="bg-slate-950/60 p-3 border-b border-white/5 flex items-center justify-between shrink-0">
             <span className="text-xs text-slate-400 font-mono">Compiled Code View</span>
             <button
               onClick={() => {
@@ -228,19 +228,19 @@ export default function PreviewPane({ template }: PreviewPaneProps) {
               Copy Code
             </button>
           </div>
-          <pre className="p-6 bg-slate-950/40 text-indigo-200 font-mono text-xs overflow-x-auto max-h-[500px]">
+          <pre className="flex-1 overflow-auto p-6 bg-slate-950/20 text-indigo-200 font-mono text-xs">
             {generatedHtml}
           </pre>
         </div>
       ) : (
-        <div className="flex justify-center w-full bg-slate-950/40 rounded-2xl border border-white/5 p-4 min-h-[550px] transition-all">
+        <div className="flex-1 min-h-0 w-full flex justify-center p-2 bg-slate-950/10 rounded-2xl">
           <div
-            className={`transition-all duration-300 rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-white ${
+            className={`transition-all duration-300 rounded-2xl overflow-hidden shadow-2xl bg-white h-full ${
               viewportWidth === "desktop"
-                ? "w-full h-[550px]"
+                ? "w-full"
                 : viewportWidth === "tablet"
-                ? "w-[768px] h-[550px]"
-                : "w-[375px] h-[550px]"
+                ? "w-[768px]"
+                : "w-[375px]"
             }`}
           >
             <iframe

@@ -21,10 +21,8 @@ export default function Page() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto bg-[#0a0c14] p-8 md:p-12">
-        <div className="max-w-6xl mx-auto h-full">
-          <PreviewPane template={currentTemplate} />
-        </div>
+      <main className="flex-1 flex flex-col bg-[#0a0c14] overflow-hidden">
+        <PreviewPane template={currentTemplate} />
       </main>
     </div>
   );
