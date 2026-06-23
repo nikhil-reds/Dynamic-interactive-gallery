@@ -115,6 +115,7 @@ body {
   transform: translate(-50%, -50%);
   backdrop-filter: blur(18px);
   pointer-events: none;
+  display: none;
 }
 
 .orbit-center span {
