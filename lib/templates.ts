@@ -1,6 +1,7 @@
 import { gridTemplate } from "../components/template/grid";
 import { masonryTemplate } from "../components/template/masonry";
 import { carouselTemplate } from "../components/template/carousel";
+import { dynamicTemplate } from "../components/template/dynamic";
 
 export interface Template {
   id: string;
@@ -14,5 +15,6 @@ export interface Template {
 export const defaultTemplates: Template[] = [
   gridTemplate,
   masonryTemplate,
-  carouselTemplate
+  carouselTemplate,
+  dynamicTemplate
 ];
