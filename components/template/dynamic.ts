@@ -135,13 +135,13 @@ body {
 }
 
 .orbit-ring-one {
-  width: min(72vw, 820px);
-  height: min(72vw, 820px);
+  width: min(54vw, 600px);
+  height: min(54vw, 600px);
 }
 
 .orbit-ring-two {
-  width: min(56vw, 620px);
-  height: min(56vw, 620px);
+  width: min(42vw, 460px);
+  height: min(42vw, 460px);
   border-style: dashed;
   opacity: 0.62;
 }
@@ -156,7 +156,7 @@ body {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: clamp(92px, 10.8vw, 168px);
+  width: clamp(68px, 8.2vw, 120px);
   aspect-ratio: 3 / 4;
   overflow: hidden;
   border-radius: clamp(16px, 2vw, 26px);
@@ -247,22 +247,7 @@ body {
 }
 
 .item-caption {
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 10px;
-  z-index: 2;
-  padding: 8px 10px;
-  border-radius: 999px;
-  color: #fff;
-  background: rgba(4, 8, 16, 0.62);
-  backdrop-filter: blur(10px);
-  font-size: clamp(0.62rem, 1vw, 0.78rem);
-  font-weight: 750;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: opacity 260ms ease, transform 260ms ease;
+  display: none !important;
 }
 
 .gallery-item.is-focused .item-caption {
@@ -398,7 +383,7 @@ body {
   function updateRadius() {
     const rect = stage.getBoundingClientRect();
     const cardWidth = items[0].getBoundingClientRect().width || 120;
-    radius = Math.max(150, Math.min(rect.width, rect.height) * 0.38 - cardWidth * 0.34);
+    radius = Math.max(100, Math.min(rect.width, rect.height) * 0.28 - cardWidth * 0.34);
   }
 
   function setOrbitTargets() {
@@ -430,7 +415,7 @@ body {
       card.targetX = orbitX;
       card.targetY = orbitY;
       card.targetZ = -120 + depth * 260 + proximity * 135;
-      card.targetScale = 0.62 + depth * 0.54 + proximity * 0.42;
+      card.targetScale = 0.46 + depth * 0.38 + proximity * 0.32;
       card.targetRotateX = orbitalTilt + (proximity ? clamp(-dy / 13, -18, 18) : 0);
       card.targetRotateY = sideTilt + (proximity ? clamp(dx / 13, -22, 22) : 0);
       card.targetOpacity = card.revealed ? 0.36 + depth * 0.58 + proximity * 0.22 : 0;
