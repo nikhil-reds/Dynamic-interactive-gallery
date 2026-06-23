@@ -132,6 +132,7 @@ body {
   border-radius: 999px;
   transform: translate(-50%, -50%);
   pointer-events: none;
+  display: none;
 }
 
 .orbit-ring-one {
