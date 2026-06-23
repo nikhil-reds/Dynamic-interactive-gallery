@@ -406,7 +406,7 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
       rawItems = Array.from(rawGallery.querySelectorAll(".gallery-item"));
     }
 
-    const radius = window.innerWidth < 768 ? 200 : 380;
+    const radius = window.innerWidth < 768 ? 150 : 300;
     
     rawItems.forEach((item, i) => {
       // Re-class the item to be styled as a clay card
