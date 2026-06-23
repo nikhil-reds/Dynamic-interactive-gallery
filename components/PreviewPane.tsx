@@ -51,15 +51,15 @@ export default function PreviewPane({ template }: PreviewPaneProps) {
 
     // Generate inner gallery elements (using paths relative to the public root)
     const imageElements = assets.images.map(
-      (img) => `<div class="gallery-item img-item"><img src="${origin}/demo/images/${img}" alt="${img}" /><div class="item-caption">${img}</div></div>`
+      (img) => `<div class="gallery-item img-item"><img src="${origin}/demo/images/${img}" alt="${img}" /></div>`
     ).join("\n");
 
     const videoElements = assets.videos.map(
-      (vid) => `<div class="gallery-item video-item"><video src="${origin}/demo/video/${vid}" controls></video><div class="item-caption">${vid}</div></div>`
+      (vid) => `<div class="gallery-item video-item"><video src="${origin}/demo/video/${vid}" controls></video></div>`
     ).join("\n");
 
     const pdfElements = assets.pdfs.map(
-      (pdf) => `<div class="gallery-item pdf-item"><iframe src="${origin}/demo/pdf/${pdf}"></iframe><div class="item-caption">${pdf}</div></div>`
+      (pdf) => `<div class="gallery-item pdf-item"><iframe src="${origin}/demo/pdf/${pdf}"></iframe></div>`
     ).join("\n");
 
     const allElements = [imageElements, videoElements, pdfElements].filter(Boolean).join("\n");

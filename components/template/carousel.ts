@@ -79,7 +79,7 @@ export const carouselTemplate: Template = {
   width: 90vw;
   max-width: 900px;
   height: 60vh;
-  border-radius: 20px;
+  border-radius: 32px;
   overflow: hidden;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);

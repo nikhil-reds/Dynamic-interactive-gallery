@@ -161,7 +161,7 @@ body {
   width: clamp(110px, 14vw, 200px);
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  border-radius: clamp(16px, 2vw, 26px);
+  border-radius: clamp(24px, 3.5vw, 36px);
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: #111827;
   box-shadow:
@@ -248,21 +248,12 @@ body {
   transform-origin: top center;
 }
 
-.item-caption {
-  display: none !important;
-}
-
 .gallery-item:hover {
   transform: translate3d(calc(-50% + var(--hover-x, 0px)), calc(-50% + var(--hover-y, 0px)), 60px) scale(1.12) rotate(3deg) !important;
   z-index: 999999 !important;
   border-color: rgba(255, 255, 255, 0.8) !important;
   box-shadow: 0 35px 90px rgba(0, 0, 0, 0.6) !important;
   filter: none !important;
-}
-
-.gallery-item.is-focused .item-caption {
-  opacity: 1;
-  transform: translateY(-2px);
 }
 
 .dynamic-empty {
