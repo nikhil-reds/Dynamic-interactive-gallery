@@ -60,7 +60,7 @@ export const gridTemplate: Template = {
 }
 .gallery-item {
   position: relative;
-  border-radius: 12px;
+  border-radius: 24px;
   overflow: hidden;
   background: #1e293b;
   border: 1px solid rgba(255,255,255,0.06);

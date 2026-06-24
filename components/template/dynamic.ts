@@ -68,16 +68,18 @@ body {
   min-height: 540px;
   overflow: hidden;
   border-radius: clamp(24px, 4vw, 46px);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: none;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
     rgba(9, 12, 18, 0.86);
   box-shadow:
     0 40px 120px rgba(0, 0, 0, 0.46),
     inset 0 1px 0 rgba(255, 255, 255, 0.09);
-  perspective: 1400px;
+  perspective: 1200px;
+  perspective-origin: center;
+  transform-style: preserve-3d;
   isolation: isolate;
-  cursor: none;
+  cursor: default;
 }
 
 .orbit-stage::before {
@@ -113,6 +115,7 @@ body {
   transform: translate(-50%, -50%);
   backdrop-filter: blur(18px);
   pointer-events: none;
+  display: none;
 }
 
 .orbit-center span {
@@ -130,16 +133,17 @@ body {
   border-radius: 999px;
   transform: translate(-50%, -50%);
   pointer-events: none;
+  display: none;
 }
 
 .orbit-ring-one {
-  width: min(72vw, 820px);
-  height: min(72vw, 820px);
+  width: min(54vw, 600px);
+  height: min(54vw, 600px);
 }
 
 .orbit-ring-two {
-  width: min(56vw, 620px);
-  height: min(56vw, 620px);
+  width: min(42vw, 460px);
+  height: min(42vw, 460px);
   border-style: dashed;
   opacity: 0.62;
 }
@@ -154,10 +158,10 @@ body {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: clamp(86px, 10vw, 148px);
-  aspect-ratio: 3 / 4;
+  width: clamp(110px, 14vw, 200px);
+  aspect-ratio: 1 / 1;
   overflow: hidden;
-  border-radius: clamp(16px, 2vw, 26px);
+  border-radius: clamp(24px, 3.5vw, 36px);
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: #111827;
   box-shadow:
@@ -166,7 +170,38 @@ body {
   opacity: 0;
   transform: translate3d(-50%, -50%, 0) scale(0.08);
   transform-style: preserve-3d;
+  backface-visibility: hidden;
   will-change: transform, opacity, filter;
+}
+
+.gallery-item::before {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(5, 8, 16, 0.58);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px);
+  font-size: 0.7rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  pointer-events: none;
+}
+
+.video-item::before {
+  content: "PLAY";
+}
+
+.pdf-item::before {
+  content: "PDF";
 }
 
 .gallery-item::after {
@@ -177,7 +212,7 @@ body {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 32%),
     linear-gradient(0deg, rgba(0, 0, 0, 0.42), transparent 38%);
-  opacity: 0.65;
+  opacity: 0.74;
   pointer-events: none;
 }
 
@@ -198,24 +233,27 @@ body {
 
 .pdf-item iframe {
   background: #f8fafc;
+  pointer-events: none;
 }
 
-.item-caption {
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 10px;
-  z-index: 2;
-  padding: 8px 10px;
-  border-radius: 999px;
-  color: #fff;
-  background: rgba(4, 8, 16, 0.62);
-  backdrop-filter: blur(10px);
-  font-size: clamp(0.62rem, 1vw, 0.78rem);
-  font-weight: 750;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.pdf-item {
+  background:
+    linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(203, 213, 225, 0.88)),
+    #f8fafc;
+}
+
+.pdf-item iframe {
+  opacity: 0.82;
+  transform: scale(1.08);
+  transform-origin: top center;
+}
+
+.gallery-item:hover {
+  transform: translate3d(calc(-50% + var(--hover-x, 0px)), calc(-50% + var(--hover-y, 0px)), 60px) scale(1.12) rotate(3deg) !important;
+  z-index: 999999 !important;
+  border-color: rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 35px 90px rgba(0, 0, 0, 0.6) !important;
+  filter: none !important;
 }
 
 .dynamic-empty {
@@ -323,6 +361,14 @@ body {
     targetOpacity: 1,
     targetBlur: 0,
     revealed: false,
+    vx: 0,
+    vy: 0,
+    vz: 0,
+    vs: 0,
+    vrx: 0,
+    vry: 0,
+    vo: 0,
+    vb: 0,
   }));
 
   let radius = 300;
@@ -330,12 +376,15 @@ body {
   let spin = 0;
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  const spring = (current, target, strength) => current + (target - current) * strength;
+  const springTo = (card, prop, velocityProp, target, stiffness, damping) => {
+    card[velocityProp] = (card[velocityProp] + (target - card[prop]) * stiffness) * damping;
+    card[prop] += card[velocityProp];
+  };
 
   function updateRadius() {
     const rect = stage.getBoundingClientRect();
     const cardWidth = items[0].getBoundingClientRect().width || 120;
-    radius = Math.max(150, Math.min(rect.width, rect.height) * 0.38 - cardWidth * 0.34);
+    radius = Math.max(100, Math.min(rect.width, rect.height) * 0.28 - cardWidth * 0.34);
   }
 
   function setOrbitTargets() {
@@ -354,7 +403,7 @@ body {
       const dx = mouse.x - cardX;
       const dy = mouse.y - cardY;
       const distance = Math.hypot(dx, dy);
-      const proximity = mouse.inside ? 1 - clamp(distance / 230, 0, 1) : 0;
+      const proximity = mouse.inside ? 1 - clamp(distance / 280, 0, 1) : 0;
 
       if (proximity > strongestProximity) {
         strongestProximity = proximity;
@@ -362,30 +411,33 @@ body {
       }
 
       const depth = (Math.sin(angle) + 1) / 2;
+      const sideTilt = Math.cos(angle) * -16;
+      const orbitalTilt = (0.5 - depth) * 12;
       card.targetX = orbitX;
       card.targetY = orbitY;
-      card.targetZ = depth * 90;
-      card.targetScale = 0.86 + depth * 0.18 + proximity * 0.36;
-      card.targetRotateX = proximity ? clamp(-dy / 16, -15, 15) : 0;
-      card.targetRotateY = proximity ? clamp(dx / 16, -18, 18) : 0;
-      card.targetOpacity = card.revealed ? 0.72 + depth * 0.22 + proximity * 0.18 : 0;
-      card.targetBlur = card.revealed ? Math.max(0, 2.2 - depth * 1.6 - proximity * 2.2) : 8;
+      card.targetZ = -120 + depth * 260 + proximity * 135;
+      card.targetScale = 0.46 + depth * 0.38 + proximity * 0.32;
+      card.targetRotateX = orbitalTilt + (proximity ? clamp(-dy / 13, -18, 18) : 0);
+      card.targetRotateY = sideTilt + (proximity ? clamp(dx / 13, -22, 22) : 0);
+      card.targetOpacity = card.revealed ? 0.36 + depth * 0.58 + proximity * 0.22 : 0;
+      card.targetBlur = 0;
     });
 
     state.forEach((card) => {
-      const isFocused = card.index === strongestIndex && strongestProximity > 0.14;
-      const dofBlur = strongestProximity > 0.18 && !isFocused ? 3.8 * strongestProximity : 0;
+      const isFocused = card.index === strongestIndex && strongestProximity > 0.1;
+      const dofBlur = 0;
 
-      card.targetBlur += dofBlur;
-      card.targetOpacity = Math.max(0.34, card.targetOpacity - dofBlur * 0.08);
-      card.item.style.zIndex = String(100 + Math.round(card.targetZ) + (isFocused ? 300 : 0));
-      card.item.classList.toggle("is-proximate", isFocused);
+      card.targetBlur = 0;
+      card.targetOpacity = Math.max(0.18, card.targetOpacity);
+      card.item.style.zIndex = String(300 + Math.round(card.targetZ) + (isFocused ? 500 : 0));
+      card.item.classList.toggle("is-focused", isFocused);
 
       const video = card.item.querySelector("video");
       if (video) {
         video.muted = true;
         video.loop = true;
         video.playsInline = true;
+        video.removeAttribute("controls");
         if (isFocused) {
           video.play().catch(() => {});
         } else {
@@ -400,18 +452,22 @@ body {
     setOrbitTargets();
 
     state.forEach((card) => {
-      const strength = card.revealed ? 0.14 : 0.09;
-      card.x = spring(card.x, card.targetX, strength);
-      card.y = spring(card.y, card.targetY, strength);
-      card.z = spring(card.z, card.targetZ, strength);
-      card.scale = spring(card.scale, card.targetScale, strength);
-      card.rotateX = spring(card.rotateX, card.targetRotateX, 0.18);
-      card.rotateY = spring(card.rotateY, card.targetRotateY, 0.18);
-      card.opacity = spring(card.opacity, card.targetOpacity, 0.13);
-      card.blur = spring(card.blur, card.targetBlur, 0.16);
+      const stiffness = card.revealed ? 0.105 : 0.075;
+      springTo(card, "x", "vx", card.targetX, stiffness, 0.74);
+      springTo(card, "y", "vy", card.targetY, stiffness, 0.74);
+      springTo(card, "z", "vz", card.targetZ, stiffness, 0.72);
+      springTo(card, "scale", "vs", card.targetScale, 0.13, 0.68);
+      springTo(card, "rotateX", "vrx", card.targetRotateX, 0.12, 0.7);
+      springTo(card, "rotateY", "vry", card.targetRotateY, 0.12, 0.7);
+      springTo(card, "opacity", "vo", card.targetOpacity, 0.12, 0.74);
+      springTo(card, "blur", "vb", 0, 0.14, 0.68);
 
+      card.item.style.setProperty('--hover-x', card.x.toFixed(2) + 'px');
+      card.item.style.setProperty('--hover-y', card.y.toFixed(2) + 'px');
       card.item.style.opacity = card.opacity.toFixed(3);
-      card.item.style.filter = "blur(" + card.blur.toFixed(2) + "px) saturate(" + (1.06 - card.blur * 0.05).toFixed(2) + ")";
+      const brightness = clamp(1.08 + card.z / 1200, 0.62, 1.18);
+      const saturation = 1.12;
+      card.item.style.filter = "brightness(" + brightness.toFixed(2) + ") saturate(" + saturation.toFixed(2) + ")";
       card.item.style.transform =
         "translate3d(calc(-50% + " + card.x.toFixed(2) + "px), calc(-50% + " + card.y.toFixed(2) + "px), " + card.z.toFixed(2) + "px) " +
         "rotateX(" + card.rotateX.toFixed(2) + "deg) " +

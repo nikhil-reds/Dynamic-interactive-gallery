@@ -69,7 +69,7 @@ export const masonryTemplate: Template = {
   display: inline-block;
   width: 100%;
   margin-bottom: 20px;
-  border-radius: 16px;
+  border-radius: 28px;
   overflow: hidden;
   background: #111827;
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -93,10 +93,5 @@ export const masonryTemplate: Template = {
   height: 350px;
   border: none;
   background: #000;
-}
-.item-caption {
-  padding: 15px;
-  font-size: 0.9rem;
-  border-top: 1px solid rgba(255,255,255,0.03);
 }`
 };
