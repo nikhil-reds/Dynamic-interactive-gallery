@@ -443,11 +443,6 @@ li {
             <div class="img-container" id="mediaContainer-\${idx}">
             </div>
           </div>
-          <div class="item-content">
-            <h2>\${media.name}</h2>
-            <h5>Loaded from the public folder gallery assets.</h5>
-            <h4>Likes: <span class="likes-total">\${likes}</span></h4>
-          </div>
           <div class="shadow hide-shadow" id="shadowContainer-\${idx}">
           </div>
         </div>
