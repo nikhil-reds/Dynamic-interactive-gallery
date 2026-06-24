@@ -8,6 +8,7 @@ import { fluidTemplate } from "../components/template/fluid";
 import { clayTemplate } from "../components/template/clay";
 import { bentoTemplate } from "../components/template/bento";
 import { glowTemplate } from "../components/template/glow";
+import { accordionTemplate } from "../components/template/accordion";
 
 export interface Template {
   id: string;
@@ -28,6 +29,7 @@ export const defaultTemplates: Template[] = [
   fluidTemplate,
   clayTemplate,
   bentoTemplate,
-  glowTemplate
+  glowTemplate,
+  accordionTemplate
 ];
 

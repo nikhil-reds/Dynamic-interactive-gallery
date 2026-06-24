@@ -176,6 +176,19 @@ export default function PreviewPane({ template }: PreviewPaneProps) {
             {viewCode ? "Show Gallery Viewer" : "View Source HTML"}
           </button>
 
+          {/* Download Zip Button */}
+          <button
+            onClick={handleExportZip}
+            disabled={isExporting}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-850/50 disabled:text-indigo-400 border border-indigo-500/20 hover:border-indigo-500/40 text-xs font-semibold rounded-xl text-white flex items-center gap-1.5 cursor-pointer transition-colors"
+            title="Download ZIP package"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>{isExporting ? "Exporting..." : "Download ZIP"}</span>
+          </button>
+
           {/* Viewport Toggles */}
           {!viewCode && (
             <div className="flex bg-slate-900/60 p-1 rounded-xl border border-white/5 gap-1">
