@@ -534,9 +534,6 @@ li {
       angle += angle_inc;
     });
 
-    const prevBtn = document.getElementById("prev-btn");
-    const nextBtn = document.getElementById("next-btn");
-
     function handleCarousel(action) {
       let activeIndex = 0;
       let activeDistance = Infinity;
@@ -571,12 +568,6 @@ li {
           item.querySelector(".item").classList.add("active-item");
           item.querySelector(".shadow").classList.remove("hide-shadow");
           
-          const prevColor = mediaList[idx > 0 ? idx - 1 : mediaList.length - 1].themeColor;
-          const nextColor = mediaList[idx < mediaList.length - 1 ? idx + 1 : 0].themeColor;
-          
-          prevBtn.style.setProperty("--btncolor", prevColor);
-          nextBtn.style.setProperty("--btncolor", nextColor);
-          
           PARTICLE_COLOR = mediaList[idx].themeColor;
         } else {
           const innerItem = item.querySelector(".item");
@@ -588,10 +579,24 @@ li {
       });
     }
 
-    if (prevBtn && nextBtn) {
-      prevBtn.addEventListener("click", () => handleCarousel("prev"));
-      nextBtn.addEventListener("click", () => handleCarousel("next"));
-    }
+    // Scroll Wheel / Trackpad Gesture Interaction to rotate the carousel
+    let isTransitioning = false;
+    window.addEventListener("wheel", (e) => {
+      if (isTransitioning) return;
+      if (Math.abs(e.deltaY) < 15) return; // sensitivity threshold
+
+      if (e.deltaY > 0) {
+        isTransitioning = true;
+        handleCarousel("next");
+      } else if (e.deltaY < 0) {
+        isTransitioning = true;
+        handleCarousel("prev");
+      }
+
+      setTimeout(() => {
+        isTransitioning = false;
+      }, 1000); // match transition lock
+    }, { passive: true });
 
     // Set initial active state
     handleCarousel("init");
