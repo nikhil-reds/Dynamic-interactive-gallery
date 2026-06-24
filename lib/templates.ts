@@ -4,6 +4,7 @@ import { carouselTemplate } from "../components/template/carousel";
 import { dynamicTemplate } from "../components/template/dynamic";
 import { fluidTemplate } from "../components/template/fluid";
 import { clayTemplate } from "../components/template/clay";
+import { bentoTemplate } from "../components/template/bento";
 
 export interface Template {
   id: string;
@@ -20,6 +21,7 @@ export const defaultTemplates: Template[] = [
   carouselTemplate,
   dynamicTemplate,
   fluidTemplate,
-  clayTemplate
+  clayTemplate,
+  bentoTemplate
 ];
 
