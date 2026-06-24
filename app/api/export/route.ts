@@ -38,6 +38,15 @@ export async function POST(req: NextRequest) {
     await fs.mkdir(videosDir, { recursive: true });
     await fs.mkdir(pdfDir, { recursive: true });
 
+    // Copy public demo assets if they exist
+    const publicImagesDir = path.join(process.cwd(), "public", "demo", "images");
+    const publicVideoDir = path.join(process.cwd(), "public", "demo", "video");
+    const publicPdfDir = path.join(process.cwd(), "public", "demo", "pdf");
+
+    await fs.cp(publicImagesDir, imagesDir, { recursive: true }).catch(() => {});
+    await fs.cp(publicVideoDir, videosDir, { recursive: true }).catch(() => {});
+    await fs.cp(publicPdfDir, pdfDir, { recursive: true }).catch(() => {});
+
     // Add README.txt files inside each folder
     await fs.writeFile(
       path.join(imagesDir, "README.txt"),
@@ -208,23 +217,34 @@ module.exports = function scanAndCompile() {
       "utf-8"
     );
 
-    // The final package should show a single executable plus the asset folders.
-    // A real Electron build can replace this file with the compiled Windows exe.
-    const exePlaceholder = [
-      "Gallery.exe",
-      "",
-      "This file is reserved for the compiled Electron executable.",
-      "The final build step should replace this placeholder with the real Gallery.exe.",
-      "",
-      "Expected runtime behavior:",
-      "1. Open beside the images, videos, and pdf folders.",
-      "2. Scan those folders automatically.",
-      "3. Render the pasted HTML/CSS/JS gallery template.",
-      "",
-    ].join("\n");
-    await fs.writeFile(path.join(packageDir, "Gallery.exe"), exePlaceholder, "utf-8");
+    // Base64 encode the user's customized templates
+    const htmlB64 = Buffer.from(html).toString("base64");
+    const cssB64 = Buffer.from(css || "").toString("base64");
+    const jsB64 = Buffer.from(js || "").toString("base64");
 
-    // Create a ZIP that contains only the clean user-facing export package.
+    // Write a data.go file that overrides the template variables
+    const dataGoContent = `package main
+
+func init() {
+	embeddedHtmlB64 = "${htmlB64}"
+	embeddedCssB64 = "${cssB64}"
+	embeddedJsB64 = "${jsB64}"
+}
+`;
+    await fs.writeFile(path.join(appSourceDir, "data.go"), dataGoContent, "utf-8");
+
+    // Copy the Go launcher source code to the temp build directory
+    const launcherSourcePath = path.join(process.cwd(), "lib", "Gallery.go");
+    const launcherSource = await fs.readFile(launcherSourcePath, "utf-8");
+    await fs.writeFile(path.join(appSourceDir, "Gallery.go"), launcherSource, "utf-8");
+
+    // Compile the binary dynamically with embedded layout data (disable modules for script compilation)
+    await execPromise(
+      `GO111MODULE=off GOOS=windows GOARCH=amd64 go build -ldflags "-s -w" -o "${path.join(packageDir, "Gallery.exe")}" .`,
+      { cwd: appSourceDir }
+    );
+
+    // Create a ZIP that contains the executable and asset folders only (no separate HTML/CSS/JS files).
     const zipPath = path.join(tempDir, zipName);
     await execPromise(`zip -r -X "../${zipName}" "Gallery.exe" "images" "videos" "pdf"`, { cwd: packageDir });
 
