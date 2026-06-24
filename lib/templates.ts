@@ -5,6 +5,7 @@ import { dynamicTemplate } from "../components/template/dynamic";
 import { fluidTemplate } from "../components/template/fluid";
 import { clayTemplate } from "../components/template/clay";
 import { bentoTemplate } from "../components/template/bento";
+import { glowTemplate } from "../components/template/glow";
 
 export interface Template {
   id: string;
@@ -22,6 +23,7 @@ export const defaultTemplates: Template[] = [
   dynamicTemplate,
   fluidTemplate,
   clayTemplate,
-  bentoTemplate
+  bentoTemplate,
+  glowTemplate
 ];
 
