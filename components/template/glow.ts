@@ -19,16 +19,7 @@ export const glowTemplate: Template = {
 </head>
 <body>
   <div class="app">
-    <div class="buttons-row intro-btns">
-      <button id="prev-btn" class="carousel-btn">
-        <div class="btn-glow"></div>
-        <div class="btn-content">Prev</div>
-      </button>
-      <button id="next-btn" class="carousel-btn">
-        <div class="btn-glow"></div>
-        <div class="btn-content">Next</div>
-      </button>
-    </div>
+    
     
     <div class="carousel-wrapper intro-carousel">
       <div class="fog"></div>
