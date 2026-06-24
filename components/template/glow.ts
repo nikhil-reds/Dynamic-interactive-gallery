@@ -271,54 +271,10 @@ li {
   border-radius: 1rem;
 }
 
-.item-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  position: absolute;
-  height: 100%;
-  width: var(--width);
-  opacity: 0;
-  color: white;
-  transition: 0.5s 0.25s ease;
-  z-index: 10;
-  text-shadow: 1px 1px 1px black;
-  pointer-events: none;
-}
-
-.item-content h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-top: 10px;
-}
-
-.item-content h5 {
-  font-weight: 200;
-  max-width: 180px;
-  font-size: 0.85rem;
-}
-
 .active-item {
   transform: rotateX(-75deg) translateY(50px) translateZ(350px) translateX(8.5rem);
   transition: 0.5s ease;
   opacity: 1;
-}
-
-.active-item .item-content {
-  transform: translateX(-175%) translateY(-25%) scale(1.6);
-  opacity: 1;
-}
-
-.item-content::after {
-  content: "";
-  position: absolute;
-  height: 150px;
-  width: 200px;
-  background: var(--glow);
-  border-radius: 2rem;
-  opacity: 35%;
-  filter: blur(50px);
-  z-index: -1;
 }
 
 .active-item .img-container,
