@@ -24,7 +24,7 @@ export const defaultTemplates: Template[] = [
   carouselTemplate,
   dynamicTemplate,
   sphereTemplate,
-  cylinderTemplate
+  cylinderTemplate,
   fluidTemplate,
   clayTemplate,
   bentoTemplate,

@@ -25,12 +25,6 @@ export const bentoTemplate: Template = {
       <div class="stack-card card-bottom"></div>
       <div class="stack-card card-middle"></div>
       <div class="stack-card card-top">
-        <div class="card-icon-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="7" y1="17" x2="17" y2="7"></line>
-            <polyline points="7 7 17 7 17 17"></polyline>
-          </svg>
-        </div>
         <div class="card-top-content">Gallery</div>
       </div>
     </div>
@@ -288,7 +282,7 @@ body {
 
     const addCardOverlay = (cardEl, title) => {
       cardEl.classList.add("has-overlay");
-      cardEl.insertAdjacentHTML("beforeend", '<div class="card-icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg></div><div class="card-top-content">' + title + '</div>');
+      cardEl.insertAdjacentHTML("beforeend", '<div class="card-top-content">' + title + '</div>');
     };
 
     const setCardMedia = (cardEl, item) => {
@@ -307,30 +301,16 @@ body {
         video.removeAttribute("controls");
         cardEl.appendChild(video);
       } else if (media.type === "pdf") {
-        const canvas = document.createElement("canvas");
-        canvas.className = "pdf-canvas";
-        cardEl.appendChild(canvas);
-
-        const placeholder = document.createElement("div");
-        placeholder.className = "pdf-placeholder";
-        placeholder.innerHTML = '<div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg><div>' + media.name + '</div></div>';
-        cardEl.appendChild(placeholder);
-
-        if (media.url && typeof pdfjsLib !== "undefined") {
-          pdfjsLib.getDocument(media.url).promise
-            .then(pdf => pdf.getPage(1))
-            .then(page => {
-              const viewport = page.getViewport({ scale: 2.0 });
-              const context = canvas.getContext("2d");
-              canvas.height = viewport.height;
-              canvas.width = viewport.width;
-              return page.render({ canvasContext: context, viewport }).promise;
-            })
-            .then(() => {
-              placeholder.style.opacity = "0";
-            })
-            .catch(console.error);
-        }
+        const iframe = document.createElement("iframe");
+        iframe.src = media.url;
+        iframe.style.position = "absolute";
+        iframe.style.inset = "8px";
+        iframe.style.width = "calc(100% - 16px)";
+        iframe.style.height = "calc(100% - 16px)";
+        iframe.style.border = "none";
+        iframe.style.display = "block";
+        iframe.style.borderRadius = "20px";
+        cardEl.appendChild(iframe);
       } else if (media.url) {
         const img = document.createElement("img");
         img.src = media.url;
