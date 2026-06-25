@@ -350,6 +350,11 @@ const lightboxScript = `
       .gallery-item, .gallery-item img, .gallery-item video {
         cursor: pointer;
       }
+      
+      /* Override template pointer-events issues so items are clickable */
+      .carousel-container, .carousel, .carousel-item-container, .item, .card {
+        pointer-events: auto !important;
+      }
     \`;
     document.head.appendChild(style);
     
@@ -442,7 +447,7 @@ const lightboxScript = `
       } else if (target.tagName === 'VIDEO') {
         video = target;
       } else {
-        const item = target.closest('.gallery-item');
+        const item = target.closest('.gallery-item, .carousel-item-container, .item, .card, article, .carousel-item');
         if (item) {
           img = item.querySelector('img');
           video = item.querySelector('video');
