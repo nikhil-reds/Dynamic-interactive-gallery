@@ -1,0 +1,36 @@
+{
+  "name": "gallery-desktop-builder",
+  "version": "0.1.0",
+  "description": "Desktop gallery builder with draggable media cards and a real Electron internet card.",
+  "main": "main.js",
+  "private": true,
+  "author": "Gallery",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win portable --x64"
+  },
+  "devDependencies": {
+    "electron": "^30.5.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.gallery.desktopbuilder",
+    "productName": "Gallery Builder",
+    "artifactName": "Gallery-Builder-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ]
+    }
+  }
+}

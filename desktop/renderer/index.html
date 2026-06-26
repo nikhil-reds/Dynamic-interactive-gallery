@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gallery Builder Desktop</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>Gallery Builder Desktop</h1>
+        <p>Drag, resize, overlap media cards, and surf the internet inside the desktop browser card.</p>
+      </div>
+      <button id="add-browser" class="primary-button" type="button">Add internet card</button>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar">
+        <section>
+          <h2>Media Cards</h2>
+          <button class="asset-card" draggable="true" data-kind="image" data-title="Image Card">Image</button>
+          <button class="asset-card" draggable="true" data-kind="video" data-title="Video Card">Video</button>
+          <button class="asset-card" draggable="true" data-kind="pdf" data-title="PDF Card">PDF</button>
+        </section>
+
+        <section class="browser-section">
+          <h2>Internet</h2>
+          <button class="asset-card browser-card" draggable="true" data-kind="browser" data-title="Internet Card">
+            Browser
+          </button>
+          <p>Drop this into the canvas for a real Electron webview browser.</p>
+        </section>
+      </aside>
+
+      <main id="canvas" class="canvas">
+        <div class="empty-state">
+          <strong>Drop cards here</strong>
+          <span>Use the internet card to browse directly inside the canvas.</span>
+        </div>
+      </main>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

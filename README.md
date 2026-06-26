@@ -49,6 +49,14 @@ public/demo/
   images/                  Demo images used in preview/export
   video/                   Demo videos used in preview/export
   pdf/                     Demo PDFs used in preview/export
+
+desktop/
+  main.js                  Electron desktop shell
+  preload.js               Safe desktop bridge for external URL actions
+  renderer/                Desktop canvas with a real webview internet card
+
+.github/workflows/
+  windows-exe.yml          Builds and uploads the Windows EXE artifact
 ```
 
 ## Getting Started
@@ -140,6 +148,31 @@ The export route performs local build work from the server process. For full ZIP
 - Network/package access for Electron dependencies if they are not already cached
 
 Generated temporary build files are written under `tmp_builds/` and cleaned up after the ZIP response is created.
+
+## Desktop Internet Card
+
+The `desktop/` app contains the full desktop version of the browser card. It uses Electron `webview`, so the card can load Google and other websites inside the draggable canvas instead of falling back to an external tab.
+
+Desktop browser card controls:
+
+```txt
+Back
+Forward
+Reload
+URL/search input
+Go
+Open externally
+```
+
+Build the Windows EXE from GitHub Actions:
+
+1. Open the repository on GitHub.
+2. Go to **Actions**.
+3. Select **Build Windows EXE**.
+4. Run the workflow manually, or push changes under `desktop/`.
+5. Download the `gallery-builder-windows-exe` artifact.
+
+The workflow builds from `desktop/package.json` and uploads the generated `.exe` from `desktop/dist/`.
 
 ## Notes
 
