@@ -3,278 +3,298 @@ import { Template } from "../../lib/templates";
 export const dynamicTemplate: Template = {
   id: "dynamic-orbit",
   name: "Dynamic Orbit Gallery",
-  description: "A premium scroll-driven circular rotating gallery.",
+  description: "A premium interactive 3D orbit gallery with touch swipe, dragging, and momentum physics.",
   html: `<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dynamic Orbit Gallery</title>
-  <style>
-    {{css}}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoreFrame | Precise Dynamic Orbit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        {{css}}
+    </style>
 </head>
 <body>
-  <section class="wrapper">
-    {{gallery}}
-  </section>
-
-  <div class="icon">
-    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mouse">
-      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-      <path d="M6 3m0 4a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-4a4 4 0 0 1 -4 -4z" />
-      <path d="M12 7l0 4" />
-      <path d="M8 26l4 4l4 -4">
-        <animateTransform attributeType="XML" attributeName="transform" type="translate" values="0 0; 0 4; 0 0" dur="1s" repeatCount="indefinite" />
-      </path>
-    </svg>
-  </div>
+    <section class="news-section">
+        <div class="news-header">
+            <span class="badge">Newsroom</span>
+            <h2 class="headline">Dynamic Orbit</h2>
+        </div>
+        <div class="carousel-viewport" id="viewport">
+            <div class="carousel-container" id="carousel">
+                {{gallery}}
+            </div>
+        </div>
+    </section>
 </body>
 </html>`,
-  css: `@import url(https://fonts.bunny.net/css?family=just-me-again-down-here:400);
-@layer base, mouse, demo;
+  css: `:root {
+    --bg: #f9f9fb;
+    --bg-card: #ffffff;
+    --txt-main: #111111;
+    --txt-muted: #666666;
+    --accent: #ff4d00;
+    --card-w: 304px; 
+    --card-border: rgba(0,0,0,0.03);
+    --card-shadow: rgba(0,0,0,0.05);
+}
 
-@layer demo {
-  @property --rotate {
-    syntax: "<number>";
-    inherits: true;
-    initial-value: 0;
-  }
- 
-  body {
-    height: 1200svh;
-    margin: 0;
-   
-    animation: --page-rotate 1s linear;
-    animation-timeline: scroll(nearest block);
-  
-    /** this allows us to rotate to exactly each card.
-    BUT, it either needs to be set via JS or hardcoded as we can't access the .wrapper sibling-count() value from the body */
-    --cards: 20;
-    animation-timing-function: steps(var(--cards)); 
-  }
-  
-  @keyframes --page-rotate {
-    to { --rotate: 1; }
-  }
-  
-  .wrapper {
-    --card-border-radius: 14px;
-    --cards: 20;
-    --card-width: max(150px, 20vw);
-    
-    --card-height: calc(var(--card-width) * 6 / 4);
-    /* radius large enough so cards don't overlap */
-    --radius: calc(var(--card-width) * var(--cards) / (2 * 3.1416));
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #0b0c10;
+        --bg-card: #161822;
+        --txt-main: #f1f3f9;
+        --txt-muted: #94a3b8;
+        --card-border: rgba(255,255,255,0.05);
+        --card-shadow: rgba(0,0,0,0.3);
+    }
+}
 
-    font-family: 'Just Me Again Down Here', handwriting;
-    position: fixed;
-    width: calc(var(--radius) * 2);
-    height: calc(var(--radius) * 2);
-  
-    /* center circle so top card is visible */
-    top: calc(50% + var(--radius) + var(--card-height) * 2);
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background-color: var(--bg); font-family: 'Inter', sans-serif; overflow: hidden; min-height: 100vh; }
+
+.news-section { padding: 40px 0; text-align: center; height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+
+.news-header { margin-bottom: 20px; z-index: 10; position: relative; }
+.headline { font-size: 48px; font-weight: 800; color: var(--txt-main); letter-spacing: -1px; }
+.badge { background: var(--bg-card); padding: 6px 16px; border-radius: 100px; font-size: 11px; font-weight: 700; color: var(--txt-muted); border: 1px solid var(--card-border); text-transform: uppercase; margin-bottom: 8px; display: inline-block; }
+
+.carousel-viewport {
+    width: 100vw;
+    height: 65vh; /* Dynamic Height */
+    min-height: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    perspective: 1000px; 
+    perspective-origin: 50% 50%;
+    cursor: grab;
+    position: relative;
+}
+
+.carousel-viewport:active { cursor: grabbing; }
+
+.carousel-container {
+    position: absolute;
+    top: 50%;
     left: 50%;
-    transform-origin: center center;
-    transform: translateX(-50%) rotate(calc(var(--rotate) * 360deg));
-    transition: transform 300ms linear;
-  }
-  
-  .wrapper > div {
-    --card-i: 1;
-    
-    /* card position around circle*/
-    --card-offset-radius: circle(var(--radius) at 50% 50%);
-    --card-offset-distance: calc((var(--card-i) - 1) / var(--cards) * 100%);
-  
-    /* current card positioning relative to --rotate to detect "top" card */
-    --card-phase: calc((var(--card-i) - 1) / var(--cards) - 0.75);
-    --card-pos: mod(calc(var(--card-phase) + var(--rotate) + 1), 1);
-    --card-dist: min(var(--card-pos), calc(1 - var(--card-pos)));
-    
-    --card-grayscale: clamp(0, calc(var(--card-dist) * var(--cards)), 1);
-    --card-opacity: calc(1 - (var(--card-dist) / 0.15 ));
-  
-    /* blur */
-    --card-focus-range: .1;
-    --card-max-blur: 7px;
-    --card-norm-dist: min(var(--card-dist), var(--card-focus-range));
-    --card-blur-progress: calc(var(--card-norm-dist) / var(--card-focus-range));
-    --card-blur: calc(var(--card-blur-progress) * var(--card-max-blur));
-  
-    /* caption */
-    --caption-active: clamp(0, 1 - (var(--card-dist) / 0.001), 1);
-    --caption-opacity: var(--caption-active);
-    --caption-y: calc(-150px * (1 - var(--caption-active)));
-  
-    filter: blur(var(--card-blur)) grayscale(var(--card-grayscale));
-    opacity: var(--card-opacity);
-    container: size;
-    
-    offset-path: var(--card-offset-radius);
-    offset-distance: var(--card-offset-distance);
-    offset-rotate: auto;
-    offset-anchor: 50% 100%;
-  
+    width: var(--card-w);
+    transform-style: preserve-3d;
+    will-change: transform;
+}
+
+.gallery-item {
     position: absolute;
-    width: var(--card-width);
-    aspect-ratio: 4/6;
-    border-radius: var(--card-border-radius);
-    transition: all 300ms ease-in-out;
-    transform-origin: center calc(var(--card-height) * 2 * -1);
-  }
-  
-  .wrapper > div::after {
-    content: attr(data-title);
-    position: absolute;
-    top: 100%;
-    left: 1rem;
-    opacity: var(--caption-opacity);
-    translate: 0 var(--caption-y);
-    font-size: clamp(1.8rem, 2vw + 0.5rem, 2.5rem);
-    z-index: -1;
-    transition: opacity 300ms ease-in-out, translate 300ms ease-in-out;
-  }
-  
-  .wrapper > div > img,
-  .wrapper > div > video,
-  .wrapper > div > iframe {
+    width: var(--card-w);
+    background: var(--bg-card);
+    border-radius: 28px;
+    padding: 24px;
+    box-shadow: 0 10px 40px var(--card-shadow);
+    border: 1px solid var(--card-border);
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    left: 50%;
+    top: 50%;
+    /* Aligning the center of the card to the center of the container */
+    margin-left: -152px; 
+    margin-top: -215px; 
+}
+
+/* Internal Card Spacing: 20px */
+.gallery-item img,
+.gallery-item video,
+.gallery-item iframe {
     width: 100%;
-    height: 100%;
+    aspect-ratio: 4/3;
+    border-radius: 20px;
+    margin-bottom: 20px;
     object-fit: cover;
-    border-radius: inherit;
-    display: block;
     border: none;
-  }
+    background: #00000008;
 }
 
-@layer mouse {
-  .mouse {
-    position: fixed;
-    bottom: 1rem;
-    left: 50%;
-    translate: -50% 0;
-    display: block;
-    width: 50px;
-    height: 50px;
-    opacity: 1;
-    color: var(--mouse-color);
-    display: none;
-    animation-name: mouse;
-    animation-duration: 1s;
-    animation-timing-function: linear;
-    animation-fill-mode: forwards;
-    animation-timeline: scroll(nearest block);
-  }
-  @supports (animation-timeline: scroll()) {
-    .mouse {
-      display: block;
-    }
-  }
-  @keyframes mouse {
-    75% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0;
-    }
-  }
+.card-meta { font-size: 12px; line-height: 16px; font-weight: 700; color: #aaa; margin-bottom: 20px; display: flex; align-items: center; }
+.card-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; margin-right: 6px; }
+
+.gallery-item h3 {
+    font-size: 20px; line-height: 28px; font-weight: 700; color: var(--txt-main);
+    margin-bottom: 20px; 
+    text-align: left;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
-@layer base {
-  * {
-    box-sizing: border-box;
-  }
-  :root {
-    color-scheme: light dark;
-    --bg-dark: rgb(16, 24, 40);
-    --bg-light: rgb(248, 244, 238);
-    --txt-light: rgb(10, 10, 10);
-    --txt-dark: rgb(245, 245, 245);
-    --line-light: rgba(0 0 0 / .25);
-    --line-dark: rgba(255 255 255 / .25);
-    
-    --clr-bg: light-dark(var(--bg-light), var(--bg-dark));
-    --clr-txt: light-dark(var(--txt-light), var(--txt-dark));
-    --clr-lines: light-dark(var(--line-light), var(--line-dark));
-  }
- 
-  body {
-    background-color: var(--clr-bg);
-    color: var(--clr-txt);
-    min-height: 100svh;
-    margin: 0;
-    padding: 2rem;
-    font-family: system, sans-serif;
-    font-size: 1rem;
-    line-height: 1.5;
-    display: grid;
-    place-items: center;
-    gap: 2rem;
-  }
-  h1 {
-    margin: 0;
-    font-size: 1.2rem;
-  }
-  @supports not (animation-timeline: scroll()) {
-    body::before {
-      content: "Sorry, your browser doesn't support animation-timeline";
-      position: fixed;
-      top: 2rem;
-      left: 50%;
-      translate: -50% 0;
-      font-size: 0.8rem;
-      z-index: 1000;
-    }
-  }
+.gallery-item p {
+    font-size: 14px; line-height: 20px; color: var(--txt-muted); text-align: left;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .headline { font-size: 32px; }
+    .carousel-viewport { height: 60vh; }
 }`,
   js: `(() => {
-  function initScrollOrbit() {
-    const wrapper = document.querySelector('.wrapper');
-    if (!wrapper) return;
-    
-    const items = Array.from(wrapper.children);
-    const total = items.length;
-    if (total === 0) return;
+  const carousel = document.getElementById('carousel');
+  const viewport = document.getElementById('viewport');
+  if (!carousel || !viewport) return;
 
-    // Set layout parameters on container and body
-    document.body.style.setProperty('--cards', total);
-    wrapper.style.setProperty('--cards', total);
+  let cards = Array.from(carousel.children);
 
-    items.forEach((item, index) => {
-      item.style.setProperty('--card-i', index + 1);
-      
-      // Pull dynamic titles
-      const img = item.querySelector('img');
-      const video = item.querySelector('video');
-      const iframe = item.querySelector('iframe');
-      
-      let title = "Gallery Item";
-      if (img) {
-        title = img.alt || img.src.split('/').pop().split('?')[0] || "Image";
-      } else if (video) {
-        title = video.src.split('/').pop().split('?')[0] || "Video";
-        video.muted = true;
-        video.autoplay = true;
-        video.loop = true;
-        video.playsInline = true;
-        video.removeAttribute("controls");
-        video.play().catch(() => {});
-      } else if (iframe) {
-        const urlSegments = iframe.src.split('/');
-        title = urlSegments[urlSegments.length - 1].split('?')[0] || "Document";
-      }
-      
-      if (!item.getAttribute('data-title')) {
-        item.setAttribute('data-title', title);
-      }
+  // If no items were uploaded/scanned in the gallery, inject StoreFrame demo data
+  if (cards.length === 0) {
+    const rawData = [
+      { title: "High-Performance Magento Hosting Solutions", date: "MAR 24, 2026", desc: "Optimized server stacks for industrial-scale e-commerce traffic.", type: "IMAGE", src: "https://picsum.photos/seed/42/400/300" },
+      { title: "Automated Scaling with StoreFrame Labs", date: "MAR 22, 2026", desc: "Predictive resource management for enterprise infrastructure.", type: "IMAGE", src: "https://picsum.photos/seed/43/400/300" },
+      { title: "Minimalist UI: The Future of Dashboard Design", date: "MAR 20, 2026", desc: "Applying Swiss-style precision to complex technical interfaces.", type: "IMAGE", src: "https://picsum.photos/seed/44/400/300" },
+      { title: "Advanced Security Layers for Magento Stores", date: "MAR 18, 2026", desc: "Zero-trust architecture protecting global transaction nodes.", type: "IMAGE", src: "https://picsum.photos/seed/45/400/300" }
+    ];
+    // Create 12 items for a beautiful dense ring
+    const fallbackData = [...rawData, ...rawData, ...rawData];
+    fallbackData.forEach((item, i) => {
+      const card = document.createElement('div');
+      card.className = 'gallery-item img-item';
+      card.innerHTML = \`<img src="\${item.src}" alt="img">\`;
+      carousel.appendChild(card);
     });
+    cards = Array.from(carousel.children);
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initScrollOrbit);
-  } else {
-    initScrollOrbit();
+  const cardCount = cards.length;
+  const cardWidth = 304;
+  const countForRadius = Math.max(cardCount, 6);
+  const radius = Math.round((cardWidth / 2) / Math.sin(Math.PI / countForRadius));
+
+  // Enhance all gallery-items with rich meta cards content dynamically
+  cards.forEach((card, i) => {
+    // If it's already pre-populated fallback, skip restructuring
+    if (card.querySelector('.card-meta')) return;
+
+    const img = card.querySelector('img');
+    const video = card.querySelector('video');
+    const iframe = card.querySelector('iframe');
+
+    let name = '';
+    let typeLabel = 'IMAGE';
+    let mediaHtml = '';
+
+    if (img) {
+      name = img.alt || img.src.split('/').pop().split('?')[0];
+      typeLabel = 'IMAGE';
+      mediaHtml = img.outerHTML;
+    } else if (video) {
+      name = video.src.split('/').pop().split('?')[0];
+      typeLabel = 'VIDEO';
+      video.removeAttribute("controls");
+      video.muted = true;
+      video.autoplay = true;
+      video.loop = true;
+      video.playsInline = true;
+      mediaHtml = video.outerHTML;
+    } else if (iframe) {
+      name = iframe.src.split('/').pop().split('?')[0];
+      typeLabel = 'DOCUMENT';
+      mediaHtml = iframe.outerHTML;
+    }
+
+    const cleanName = name ? decodeURIComponent(name).replace(/\\.[^/.]+$/, "") : \`Asset \${i + 1}\`;
+    const capitalizedName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
+    const dateStr = new Date(Date.now() - i * 2 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).toUpperCase();
+
+    const title = capitalizedName;
+    const desc = \`Explore this \${typeLabel.toLowerCase()} asset dynamically in 3D space with high-precision orbit controls.\`;
+
+    card.className = 'gallery-item';
+    card.innerHTML = \`
+      \${mediaHtml}
+      <div class="card-meta"><span class="card-dot"></span>\${typeLabel} • \${dateStr}</div>
+      <h3>\${title}</h3>
+      <p>\${desc}</p>
+    \`;
+  });
+
+  // Position cards in 3D circle
+  cards.forEach((card, i) => {
+    const angle = (i * 360) / cardCount;
+    card.style.transform = \`rotateY(\${angle}deg) translateZ(\${radius}px) rotateY(180deg)\`;
+  });
+
+  // Setup Physics & Inertia Engine
+  let currentRotation = 0;
+  let velocity = 0; 
+  let isDragging = false;
+  let lastX = 0;
+  let scrollSpeed = 0.15; // Drag sensitivity
+
+  function animate() {
+    if (!isDragging) {
+      // Apply momentum
+      currentRotation += velocity;
+      
+      // Friction
+      velocity *= 0.95; 
+
+      // Idle drift: slow rotation when not being interacted with
+      if (Math.abs(velocity) < 0.01) {
+        currentRotation -= 0.05; 
+      }
+    }
+    
+    carousel.style.transform = \`translate(-50%, -50%) rotateY(\${currentRotation}deg)\`;
+    requestAnimationFrame(animate);
   }
+
+  // Play video media
+  cards.forEach((card) => {
+    const video = card.querySelector('video');
+    if (video) {
+      video.play().catch(() => {});
+    }
+  });
+
+  // Interaction Handlers
+  const onStart = (e) => {
+    isDragging = true;
+    lastX = e.pageX || (e.touches ? e.touches[0].pageX : 0);
+    velocity = 0; // Kill momentum when grabbed
+  };
+
+  const onMove = (e) => {
+    if (!isDragging) return;
+    if (e.touches) e.preventDefault(); // Stop mobile "bounce"
+    
+    const x = e.pageX || (e.touches ? e.touches[0].pageX : 0);
+    const deltaX = x - lastX;
+    
+    currentRotation += deltaX * scrollSpeed;
+    velocity = deltaX * scrollSpeed;
+    lastX = x;
+  };
+
+  const onEnd = () => {
+    isDragging = false;
+  };
+
+  // Event Binding
+  viewport.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onEnd);
+
+  viewport.addEventListener('touchstart', onStart, { passive: false });
+  window.addEventListener('touchmove', onMove, { passive: false });
+  window.addEventListener('touchend', onEnd);
+
+  window.addEventListener('wheel', (e) => {
+    if (e.target.closest('#viewport')) {
+      velocity += e.deltaY * 0.01;
+    }
+  }, { passive: true });
+
+  animate();
 })()`
 };

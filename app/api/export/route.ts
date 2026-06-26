@@ -3,6 +3,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { exec } from "child_process";
 import { promisify } from "util";
+const AdmZip = require("adm-zip");
 
 const execPromise = promisify(exec);
 
@@ -117,7 +118,10 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports = function scanAndCompile() {
-  const baseDir = __dirname;
+  const isPackaged = !process.defaultApp && process.execPath.toLowerCase().includes('gallery.exe');
+  const baseDir = isPackaged ? path.dirname(process.execPath) : __dirname;
+  const appDir = __dirname;
+  
   const imagesDir = path.join(baseDir, 'images');
   const videosDir = path.join(baseDir, 'videos');
   const pdfDir = path.join(baseDir, 'pdf');
@@ -156,9 +160,9 @@ module.exports = function scanAndCompile() {
   const allHtml = [imgHtml, vidHtml, pdfHtml].filter(Boolean).join('\\n');
 
   // Load template
-  let html = fs.readFileSync(path.join(baseDir, 'template.html'), 'utf-8');
-  const css = fs.readFileSync(path.join(baseDir, 'template.css'), 'utf-8');
-  const js = fs.readFileSync(path.join(baseDir, 'template.js'), 'utf-8');
+  let html = fs.readFileSync(path.join(appDir, 'template.html'), 'utf-8');
+  const css = fs.readFileSync(path.join(appDir, 'template.css'), 'utf-8');
+  const js = fs.readFileSync(path.join(appDir, 'template.js'), 'utf-8');
 
   // Replace CSS
   if (html.includes('{{css}}')) {
@@ -167,22 +171,28 @@ module.exports = function scanAndCompile() {
     html = html.replace('</head>', \`<style>\${css}</style></head>\`);
   }
 
+  // Check for placeholders before replacing them
+  const hasGallery = html.includes('{{gallery}}');
+  const hasImages = html.includes('{{images}}');
+  const hasVideos = html.includes('{{videos}}');
+  const hasPdfs = html.includes('{{pdfs}}');
+
   // Replace content placeholders
-  if (html.includes('{{gallery}}')) {
-    html = html.replace(/\\{\\{gallery\\}\\}/g, allHtml);
+  if (hasGallery) {
+    html = html.replace(/\{\{gallery\}\}/g, allHtml);
   }
-  if (html.includes('{{images}}')) {
-    html = html.replace(/\\{\\{images\\}\\}/g, imgHtml);
+  if (hasImages) {
+    html = html.replace(/\{\{images\}\}/g, imgHtml);
   }
-  if (html.includes('{{videos}}')) {
-    html = html.replace(/\\{\\{videos\\}\\}/g, vidHtml);
+  if (hasVideos) {
+    html = html.replace(/\{\{videos\}\}/g, vidHtml);
   }
-  if (html.includes('{{pdfs}}')) {
-    html = html.replace(/\\{\\{pdfs\\}\\}/g, pdfHtml);
+  if (hasPdfs) {
+    html = html.replace(/\{\{pdfs\}\}/g, pdfHtml);
   }
 
-  // If no placeholder, append to body
-  if (!html.includes('{{gallery}}') && !html.includes('{{images}}') && !html.includes('{{videos}}') && !html.includes('{{pdfs}}')) {
+  // If no placeholder was present originally, append to body
+  if (!hasGallery && !hasImages && !hasVideos && !hasPdfs) {
     html = html.replace('</body>', \`<div class="gallery-fallback">\${allHtml}</div></body>\`);
   }
 
@@ -191,7 +201,7 @@ module.exports = function scanAndCompile() {
     html = html.replace('</body>', \`<script>\${js}</script></body>\`);
   }
 
-  fs.writeFileSync(path.join(baseDir, 'index.html'), html, 'utf-8');
+  fs.writeFileSync(path.join(appDir, 'index.html'), html, 'utf-8');
 };
 `;
     await fs.writeFile(path.join(appSourceDir, "gallery-scanner.js"), scannerJsContent, "utf-8");
@@ -217,10 +227,31 @@ module.exports = function scanAndCompile() {
       "utf-8"
     );
 
-    // Base64 encode the user's customized templates
-    const htmlB64 = Buffer.from(html).toString("base64");
-    const cssB64 = Buffer.from(css || "").toString("base64");
-    const jsB64 = Buffer.from(js || "").toString("base64");
+    console.log("Installing electron dependencies in:", appSourceDir);
+    await execPromise("npm install", { cwd: appSourceDir });
+    console.log("Packaging electron app for Windows...");
+    await execPromise("npx electron-packager . Gallery --platform=win32 --arch=x64 --out=\"" + tempDir + "\" --overwrite", { cwd: appSourceDir });
+
+    const finalAppDir = path.join(tempDir, "Gallery-win32-x64");
+
+    // Move the media folders into the final app directory so they sit next to Gallery.exe
+    const finalImagesDir = path.join(finalAppDir, "images");
+    const finalVideosDir = path.join(finalAppDir, "videos");
+    const finalPdfDir = path.join(finalAppDir, "pdf");
+
+    await fs.mkdir(finalImagesDir, { recursive: true });
+    await fs.mkdir(finalVideosDir, { recursive: true });
+    await fs.mkdir(finalPdfDir, { recursive: true });
+
+    await fs.writeFile(path.join(finalImagesDir, "README.txt"), "Put your image files in this folder.\nSupported: jpg, jpeg, png, webp, gif, svg", "utf-8");
+    await fs.writeFile(path.join(finalVideosDir, "README.txt"), "Put your video files in this folder.\nSupported: mp4, webm, mov", "utf-8");
+    await fs.writeFile(path.join(finalPdfDir, "README.txt"), "Put your PDF files in this folder.\nSupported: pdf", "utf-8");
+
+    // Copy demo files into the final app directory if they exist
+    const publicDemoDir = path.join(process.cwd(), "public", "demo");
+    await fs.cp(path.join(publicDemoDir, "images"), finalImagesDir, { recursive: true }).catch(() => {});
+    await fs.cp(path.join(publicDemoDir, "video"), finalVideosDir, { recursive: true }).catch(() => {});
+    await fs.cp(path.join(publicDemoDir, "pdf"), finalPdfDir, { recursive: true }).catch(() => {});
 
     // Write a data.go file that overrides the template variables
     const dataGoContent = `package main
@@ -246,7 +277,10 @@ func init() {
 
     // Create a ZIP that contains the executable and asset folders only (no separate HTML/CSS/JS files).
     const zipPath = path.join(tempDir, zipName);
-    await execPromise(`zip -r -X "../${zipName}" "Gallery.exe" "images" "videos" "pdf"`, { cwd: packageDir });
+    
+    const zip = new AdmZip();
+    zip.addLocalFolder(finalAppDir); // Add the compiled app contents
+    zip.writeZip(zipPath);
 
     const zipBuffer = await fs.readFile(zipPath);
 
