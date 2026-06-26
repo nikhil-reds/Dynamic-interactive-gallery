@@ -162,22 +162,28 @@ module.exports = function scanAndCompile() {
     html = html.replace('</head>', \`<style>\${css}</style></head>\`);
   }
 
+  // Check for placeholders before replacing them
+  const hasGallery = html.includes('{{gallery}}');
+  const hasImages = html.includes('{{images}}');
+  const hasVideos = html.includes('{{videos}}');
+  const hasPdfs = html.includes('{{pdfs}}');
+
   // Replace content placeholders
-  if (html.includes('{{gallery}}')) {
-    html = html.replace(/\\{\\{gallery\\}\\}/g, allHtml);
+  if (hasGallery) {
+    html = html.replace(/\{\{gallery\}\}/g, allHtml);
   }
-  if (html.includes('{{images}}')) {
-    html = html.replace(/\\{\\{images\\}\\}/g, imgHtml);
+  if (hasImages) {
+    html = html.replace(/\{\{images\}\}/g, imgHtml);
   }
-  if (html.includes('{{videos}}')) {
-    html = html.replace(/\\{\\{videos\\}\\}/g, vidHtml);
+  if (hasVideos) {
+    html = html.replace(/\{\{videos\}\}/g, vidHtml);
   }
-  if (html.includes('{{pdfs}}')) {
-    html = html.replace(/\\{\\{pdfs\\}\\}/g, pdfHtml);
+  if (hasPdfs) {
+    html = html.replace(/\{\{pdfs\}\}/g, pdfHtml);
   }
 
-  // If no placeholder, append to body
-  if (!html.includes('{{gallery}}') && !html.includes('{{images}}') && !html.includes('{{videos}}') && !html.includes('{{pdfs}}')) {
+  // If no placeholder was present originally, append to body
+  if (!hasGallery && !hasImages && !hasVideos && !hasPdfs) {
     html = html.replace('</body>', \`<div class="gallery-fallback">\${allHtml}</div></body>\`);
   }
 
