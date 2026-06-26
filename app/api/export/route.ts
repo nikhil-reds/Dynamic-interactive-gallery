@@ -3,6 +3,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { exec } from "child_process";
 import { promisify } from "util";
+const AdmZip = require("adm-zip");
 
 const execPromise = promisify(exec);
 
@@ -226,7 +227,13 @@ module.exports = function scanAndCompile() {
 
     // Create a ZIP that contains only the clean user-facing export package.
     const zipPath = path.join(tempDir, zipName);
-    await execPromise(`zip -r -X "../${zipName}" "Gallery.exe" "images" "videos" "pdf"`, { cwd: packageDir });
+    
+    const zip = new AdmZip();
+    zip.addLocalFile(path.join(packageDir, "Gallery.exe"));
+    zip.addLocalFolder(path.join(packageDir, "images"), "images");
+    zip.addLocalFolder(path.join(packageDir, "videos"), "videos");
+    zip.addLocalFolder(path.join(packageDir, "pdf"), "pdf");
+    zip.writeZip(zipPath);
 
     const zipBuffer = await fs.readFile(zipPath);
 
