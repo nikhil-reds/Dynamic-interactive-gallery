@@ -109,7 +109,10 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports = function scanAndCompile() {
-  const baseDir = __dirname;
+  const isPackaged = !process.defaultApp && process.execPath.toLowerCase().includes('gallery.exe');
+  const baseDir = isPackaged ? path.dirname(process.execPath) : __dirname;
+  const appDir = __dirname;
+  
   const imagesDir = path.join(baseDir, 'images');
   const videosDir = path.join(baseDir, 'videos');
   const pdfDir = path.join(baseDir, 'pdf');
@@ -148,9 +151,9 @@ module.exports = function scanAndCompile() {
   const allHtml = [imgHtml, vidHtml, pdfHtml].filter(Boolean).join('\\n');
 
   // Load template
-  let html = fs.readFileSync(path.join(baseDir, 'template.html'), 'utf-8');
-  const css = fs.readFileSync(path.join(baseDir, 'template.css'), 'utf-8');
-  const js = fs.readFileSync(path.join(baseDir, 'template.js'), 'utf-8');
+  let html = fs.readFileSync(path.join(appDir, 'template.html'), 'utf-8');
+  const css = fs.readFileSync(path.join(appDir, 'template.css'), 'utf-8');
+  const js = fs.readFileSync(path.join(appDir, 'template.js'), 'utf-8');
 
   // Replace CSS
   if (html.includes('{{css}}')) {
@@ -183,7 +186,7 @@ module.exports = function scanAndCompile() {
     html = html.replace('</body>', \`<script>\${js}</script></body>\`);
   }
 
-  fs.writeFileSync(path.join(baseDir, 'index.html'), html, 'utf-8');
+  fs.writeFileSync(path.join(appDir, 'index.html'), html, 'utf-8');
 };
 `;
     await fs.writeFile(path.join(appSourceDir, "gallery-scanner.js"), scannerJsContent, "utf-8");
@@ -209,30 +212,37 @@ module.exports = function scanAndCompile() {
       "utf-8"
     );
 
-    // The final package should show a single executable plus the asset folders.
-    // A real Electron build can replace this file with the compiled Windows exe.
-    const exePlaceholder = [
-      "Gallery.exe",
-      "",
-      "This file is reserved for the compiled Electron executable.",
-      "The final build step should replace this placeholder with the real Gallery.exe.",
-      "",
-      "Expected runtime behavior:",
-      "1. Open beside the images, videos, and pdf folders.",
-      "2. Scan those folders automatically.",
-      "3. Render the pasted HTML/CSS/JS gallery template.",
-      "",
-    ].join("\n");
-    await fs.writeFile(path.join(packageDir, "Gallery.exe"), exePlaceholder, "utf-8");
+    console.log("Installing electron dependencies in:", appSourceDir);
+    await execPromise("npm install", { cwd: appSourceDir });
+    console.log("Packaging electron app for Windows...");
+    await execPromise("npx electron-packager . Gallery --platform=win32 --arch=x64 --out=\"" + tempDir + "\" --overwrite", { cwd: appSourceDir });
+
+    const finalAppDir = path.join(tempDir, "Gallery-win32-x64");
+
+    // Move the media folders into the final app directory so they sit next to Gallery.exe
+    const finalImagesDir = path.join(finalAppDir, "images");
+    const finalVideosDir = path.join(finalAppDir, "videos");
+    const finalPdfDir = path.join(finalAppDir, "pdf");
+
+    await fs.mkdir(finalImagesDir, { recursive: true });
+    await fs.mkdir(finalVideosDir, { recursive: true });
+    await fs.mkdir(finalPdfDir, { recursive: true });
+
+    await fs.writeFile(path.join(finalImagesDir, "README.txt"), "Put your image files in this folder.\nSupported: jpg, jpeg, png, webp, gif, svg", "utf-8");
+    await fs.writeFile(path.join(finalVideosDir, "README.txt"), "Put your video files in this folder.\nSupported: mp4, webm, mov", "utf-8");
+    await fs.writeFile(path.join(finalPdfDir, "README.txt"), "Put your PDF files in this folder.\nSupported: pdf", "utf-8");
+
+    // Copy demo files into the final app directory if they exist
+    const publicDemoDir = path.join(process.cwd(), "public", "demo");
+    await fs.cp(path.join(publicDemoDir, "images"), finalImagesDir, { recursive: true }).catch(() => {});
+    await fs.cp(path.join(publicDemoDir, "video"), finalVideosDir, { recursive: true }).catch(() => {});
+    await fs.cp(path.join(publicDemoDir, "pdf"), finalPdfDir, { recursive: true }).catch(() => {});
 
     // Create a ZIP that contains only the clean user-facing export package.
     const zipPath = path.join(tempDir, zipName);
     
     const zip = new AdmZip();
-    zip.addLocalFile(path.join(packageDir, "Gallery.exe"));
-    zip.addLocalFolder(path.join(packageDir, "images"), "images");
-    zip.addLocalFolder(path.join(packageDir, "videos"), "videos");
-    zip.addLocalFolder(path.join(packageDir, "pdf"), "pdf");
+    zip.addLocalFolder(finalAppDir); // Add the compiled app contents
     zip.writeZip(zipPath);
 
     const zipBuffer = await fs.readFile(zipPath);
