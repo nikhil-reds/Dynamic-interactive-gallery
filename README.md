@@ -170,9 +170,18 @@ Build the Windows EXE from GitHub Actions:
 2. Go to **Actions**.
 3. Select **Build Windows EXE**.
 4. Run the workflow manually, or push changes under `desktop/`.
-5. Download the `gallery-builder-windows-exe` artifact.
+5. Download the `gallery-builder-windows` artifact.
 
-The workflow builds from `desktop/package.json` and uploads the generated `.exe` from `desktop/dist/`.
+The downloaded artifact contains:
+
+```txt
+Gallery-Builder.exe
+images/
+videos/
+pdf/
+```
+
+Keep the media folders beside the executable. The desktop app scans them at startup, displays supported files as draggable sidebar cards, and watches for files that are added, renamed, or removed while the app is running.
 
 ## Notes
 

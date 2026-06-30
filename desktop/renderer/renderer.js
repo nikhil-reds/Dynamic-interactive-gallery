@@ -1,6 +1,16 @@
 const canvas = document.getElementById("canvas");
 const workspace = document.querySelector(".workspace");
 const sidebarToggle = document.getElementById("sidebar-toggle");
+const assetLists = {
+  image: document.getElementById("image-assets"),
+  video: document.getElementById("video-assets"),
+  pdf: document.getElementById("pdf-assets"),
+};
+const assetCounts = {
+  image: document.getElementById("image-count"),
+  video: document.getElementById("video-count"),
+  pdf: document.getElementById("pdf-count"),
+};
 
 let nextZIndex = 2;
 let activeItem = null;
@@ -94,20 +104,41 @@ function createBrowserBody(item) {
   return shell;
 }
 
-function createPlaceholderBody(kind) {
-  const body = document.createElement("div");
-  body.className = "placeholder-body";
-  body.textContent = kind.toUpperCase();
-  return body;
+function createMediaBody(kind, src, title) {
+  if (kind === "image") {
+    const image = document.createElement("img");
+    image.className = "media-content";
+    image.src = src;
+    image.alt = title;
+    image.draggable = false;
+    return image;
+  }
+
+  if (kind === "video") {
+    const video = document.createElement("video");
+    video.className = "media-content";
+    video.src = src;
+    video.controls = true;
+    video.preload = "metadata";
+    return video;
+  }
+
+  const pdf = document.createElement("embed");
+  pdf.className = "media-content pdf-content";
+  pdf.src = src;
+  pdf.type = "application/pdf";
+  return pdf;
 }
 
-function createCanvasItem(kind, title, x, y) {
+function createCanvasItem(kind, title, x, y, src = "") {
   const item = document.createElement("section");
   item.className = "canvas-item";
+  item.dataset.kind = kind;
+  item.dataset.src = src;
   item.style.left = `${x}px`;
   item.style.top = `${y}px`;
-  item.style.width = kind === "browser" ? "760px" : "360px";
-  item.style.height = kind === "browser" ? "520px" : "280px";
+  item.style.width = kind === "browser" ? "760px" : kind === "pdf" ? "480px" : "420px";
+  item.style.height = kind === "browser" ? "520px" : kind === "pdf" ? "600px" : "320px";
   item.style.zIndex = String(nextZIndex++);
 
   const header = document.createElement("div");
@@ -135,7 +166,7 @@ function createCanvasItem(kind, title, x, y) {
 
   const body = document.createElement("div");
   body.className = "item-body";
-  body.append(kind === "browser" ? createBrowserBody(item) : createPlaceholderBody(kind));
+  body.append(kind === "browser" ? createBrowserBody(item) : createMediaBody(kind, src, title));
 
   const resizeHandle = document.createElement("div");
   resizeHandle.className = "resize-handle";
@@ -210,18 +241,89 @@ function createCanvasItem(kind, title, x, y) {
   return item;
 }
 
-document.querySelectorAll(".asset-card").forEach((card) => {
+function makeCardDraggable(card) {
   card.addEventListener("dragstart", (event) => {
     event.dataTransfer.setData(
       "application/x-gallery-desktop-card",
       JSON.stringify({
         kind: card.dataset.kind,
         title: card.dataset.title,
+        src: card.dataset.src || "",
       })
     );
     event.dataTransfer.effectAllowed = "copy";
   });
-});
+}
+
+function createAssetPreview(asset) {
+  const preview = document.createElement("div");
+  preview.className = `asset-preview ${asset.kind}-preview`;
+
+  if (asset.kind === "image") {
+    const image = document.createElement("img");
+    image.src = asset.src;
+    image.alt = "";
+    image.draggable = false;
+    preview.append(image);
+  } else if (asset.kind === "video") {
+    const video = document.createElement("video");
+    video.src = asset.src;
+    video.muted = true;
+    video.preload = "metadata";
+    preview.append(video);
+  } else {
+    preview.textContent = "PDF";
+  }
+
+  return preview;
+}
+
+function createAssetCard(asset) {
+  const card = document.createElement("button");
+  card.className = "asset-card media-asset-card";
+  card.type = "button";
+  card.draggable = true;
+  card.dataset.kind = asset.kind;
+  card.dataset.title = asset.title;
+  card.dataset.src = asset.src;
+  card.title = `Drag ${asset.title} onto the canvas`;
+
+  const name = document.createElement("span");
+  name.className = "asset-name";
+  name.textContent = asset.title;
+
+  card.append(createAssetPreview(asset), name);
+  makeCardDraggable(card);
+  return card;
+}
+
+function renderMediaAssets(assets) {
+  const grouped = { image: [], video: [], pdf: [] };
+  assets.forEach((asset) => {
+    if (grouped[asset.kind]) grouped[asset.kind].push(asset);
+  });
+
+  Object.entries(assetLists).forEach(([kind, list]) => {
+    const kindAssets = grouped[kind];
+    list.replaceChildren(...kindAssets.map(createAssetCard));
+    list.classList.toggle("is-empty", kindAssets.length === 0);
+    assetCounts[kind].textContent = String(kindAssets.length);
+  });
+
+  const availableSources = new Set(assets.map((asset) => asset.src));
+  document.querySelectorAll('.canvas-item:not([data-kind="browser"])').forEach((item) => {
+    item.classList.toggle("source-missing", !availableSources.has(item.dataset.src));
+  });
+}
+
+document.querySelectorAll(".asset-card").forEach(makeCardDraggable);
+
+if (window.galleryDesktop?.getMediaAssets) {
+  window.galleryDesktop.getMediaAssets().then(renderMediaAssets).catch((error) => {
+    console.error("Could not load media folders:", error);
+  });
+  window.galleryDesktop.onMediaAssetsChanged(renderMediaAssets);
+}
 
 canvas.addEventListener("dragover", (event) => {
   event.preventDefault();
@@ -243,7 +345,7 @@ canvas.addEventListener("drop", (event) => {
   if (!raw) return;
 
   const card = JSON.parse(raw);
-  createCanvasItem(card.kind, card.title, x, y);
+  createCanvasItem(card.kind, card.title, x, y, card.src);
 });
 
 canvas.addEventListener("pointerdown", (event) => {

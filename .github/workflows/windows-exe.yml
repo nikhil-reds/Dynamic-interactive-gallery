@@ -27,13 +27,24 @@ jobs:
           node-version: "20"
 
       - name: Install desktop dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build Windows portable EXE
         run: npm run dist:win
 
-      - name: Upload EXE artifact
+      - name: Assemble downloadable gallery
+        shell: pwsh
+        run: |
+          $release = "release"
+          New-Item -ItemType Directory -Force "$release/images", "$release/videos", "$release/pdf" | Out-Null
+          $exe = Get-ChildItem "dist/*.exe" | Select-Object -First 1
+          Copy-Item $exe.FullName "$release/Gallery-Builder.exe"
+          Set-Content "$release/images/README.txt" "Place image files here: jpg, jpeg, png, webp, gif, svg."
+          Set-Content "$release/videos/README.txt" "Place video files here: mp4, webm, mov."
+          Set-Content "$release/pdf/README.txt" "Place PDF files here."
+
+      - name: Upload gallery ZIP artifact
         uses: actions/upload-artifact@v4
         with:
-          name: gallery-builder-windows-exe
-          path: desktop/dist/*.exe
+          name: gallery-builder-windows
+          path: desktop/release/*

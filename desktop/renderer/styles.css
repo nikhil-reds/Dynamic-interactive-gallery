@@ -56,7 +56,8 @@ body {
     border-color 180ms ease;
 }
 
-.sidebar > section {
+.sidebar > section,
+.sidebar > .media-library {
   min-width: 244px;
 }
 
@@ -112,11 +113,47 @@ body {
 }
 
 .sidebar h2 {
-  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 10px;
   color: #64748b;
   font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
+}
+
+.sidebar h2 span {
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.media-library {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.asset-section {
+  margin-bottom: 20px;
+}
+
+.asset-list {
+  display: grid;
+  gap: 8px;
+}
+
+.asset-list.is-empty::after {
+  display: block;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #64748b;
+  content: attr(data-empty-label);
+  font-size: 11px;
+  padding: 12px;
+  text-align: center;
 }
 
 .asset-card {
@@ -129,6 +166,47 @@ body {
   border-radius: 10px;
   font-size: 13px;
   font-weight: 800;
+}
+
+.media-asset-card {
+  height: 62px;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 0;
+  overflow: hidden;
+  padding: 6px;
+  text-align: left;
+}
+
+.asset-preview {
+  display: grid;
+  width: 68px;
+  height: 48px;
+  flex: 0 0 68px;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 6px;
+  background: #020617;
+  color: #fda4af;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.asset-preview img,
+.asset-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.asset-name {
+  min-width: 0;
+  overflow: hidden;
+  color: #e2e8f0;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .asset-card:hover {
@@ -145,6 +223,12 @@ body {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.6;
+}
+
+.browser-section {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
 }
 
 .canvas {
@@ -234,17 +318,34 @@ body {
 }
 
 .item-body {
+  position: relative;
   min-height: 0;
   flex: 1;
 }
 
-.placeholder-body {
-  display: grid;
+.media-content {
+  display: block;
+  width: 100%;
   height: 100%;
+  border: 0;
+  background: #020617;
+  object-fit: contain;
+}
+
+.pdf-content {
+  background: white;
+}
+
+.canvas-item.source-missing .item-body::after {
+  position: absolute;
+  inset: 0;
+  display: grid;
   place-items: center;
-  color: #cbd5e1;
-  font-size: 24px;
-  font-weight: 900;
+  background: rgba(2, 6, 23, 0.88);
+  color: #fda4af;
+  content: "Source file was removed";
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .browser-shell {

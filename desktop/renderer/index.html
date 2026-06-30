@@ -9,12 +9,22 @@
   <body>
     <div class="workspace">
       <aside id="asset-sidebar" class="sidebar">
-        <section>
-          <h2>Media Cards</h2>
-          <button class="asset-card" draggable="true" data-kind="image" data-title="Image Card">Image</button>
-          <button class="asset-card" draggable="true" data-kind="video" data-title="Video Card">Video</button>
-          <button class="asset-card" draggable="true" data-kind="pdf" data-title="PDF Card">PDF</button>
-        </section>
+        <div class="media-library">
+          <section class="asset-section">
+            <h2>Images <span id="image-count">0</span></h2>
+            <div id="image-assets" class="asset-list" data-empty-label="No images found"></div>
+          </section>
+
+          <section class="asset-section">
+            <h2>Videos <span id="video-count">0</span></h2>
+            <div id="video-assets" class="asset-list" data-empty-label="No videos found"></div>
+          </section>
+
+          <section class="asset-section">
+            <h2>PDFs <span id="pdf-count">0</span></h2>
+            <div id="pdf-assets" class="asset-list" data-empty-label="No PDFs found"></div>
+          </section>
+        </div>
 
         <section class="browser-section">
           <h2>Internet</h2>
