@@ -134,6 +134,33 @@ body {
   flex: 1;
   overflow-y: auto;
   padding-right: 4px;
+  scrollbar-color: transparent transparent;
+  scrollbar-width: thin;
+}
+
+.media-library:hover {
+  scrollbar-color: rgba(148, 163, 184, 0.42) transparent;
+}
+
+.media-library::-webkit-scrollbar {
+  width: 5px;
+}
+
+.media-library::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.media-library::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: transparent;
+}
+
+.media-library:hover::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.42);
+}
+
+.media-library::-webkit-scrollbar-thumb:hover {
+  background: rgba(165, 180, 252, 0.65);
 }
 
 .asset-section {
@@ -315,6 +342,32 @@ body {
   font-size: 10px;
   font-weight: 800;
   padding: 3px 6px;
+}
+
+.icon-button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  padding: 0;
+}
+
+.icon-button svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+  pointer-events: none;
+}
+
+.delete-button:hover {
+  border-color: rgba(248, 113, 113, 0.55);
+  background: rgba(127, 29, 29, 0.35);
+  color: #fecaca;
+}
+
+.delete-button:focus-visible {
+  outline: 2px solid #f87171;
+  outline-offset: 2px;
 }
 
 .item-body {

@@ -101,6 +101,8 @@ function createBrowserBody(item) {
     item.querySelector(".item-title").textContent = event.url;
   });
 
+  webview.addEventListener("focus", () => setActive(item));
+
   return shell;
 }
 
@@ -130,6 +132,21 @@ function createMediaBody(kind, src, title) {
   return pdf;
 }
 
+function createTrashIcon() {
+  const namespace = "http://www.w3.org/2000/svg";
+  const icon = document.createElementNS(namespace, "svg");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("aria-hidden", "true");
+
+  const path = document.createElementNS(namespace, "path");
+  path.setAttribute(
+    "d",
+    "M9 3h6l1 2h4v2h-1l-1 14H6L5 7H4V5h4l1-2Zm-1.99 4 .86 12h8.26l.86-12H7.01ZM9 9h2v8H9V9Zm4 0h2v8h-2V9Z"
+  );
+  icon.append(path);
+  return icon;
+}
+
 function createCanvasItem(kind, title, x, y, src = "") {
   const item = document.createElement("section");
   item.className = "canvas-item";
@@ -151,17 +168,14 @@ function createCanvasItem(kind, title, x, y, src = "") {
   const tools = document.createElement("div");
   tools.className = "tool-row";
 
-  const front = document.createElement("button");
-  front.className = "tool-button";
-  front.type = "button";
-  front.textContent = "Front";
-
   const close = document.createElement("button");
-  close.className = "tool-button";
+  close.className = "tool-button icon-button delete-button";
   close.type = "button";
-  close.textContent = "Delete";
+  close.setAttribute("aria-label", `Delete ${title}`);
+  close.title = "Delete";
+  close.append(createTrashIcon());
 
-  tools.append(front, close);
+  tools.append(close);
   header.append(itemTitle, tools);
 
   const body = document.createElement("div");
@@ -177,11 +191,6 @@ function createCanvasItem(kind, title, x, y, src = "") {
   canvas.querySelector(".empty-state")?.remove();
   setActive(item);
 
-  front.addEventListener("click", (event) => {
-    event.stopPropagation();
-    setActive(item);
-  });
-
   close.addEventListener("click", (event) => {
     event.stopPropagation();
     item.remove();
@@ -191,6 +200,8 @@ function createCanvasItem(kind, title, x, y, src = "") {
   item.addEventListener("pointerdown", () => setActive(item));
 
   header.addEventListener("pointerdown", (event) => {
+    if (event.target.closest("button")) return;
+
     event.preventDefault();
     event.stopPropagation();
     setActive(item);
