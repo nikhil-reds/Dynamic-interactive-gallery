@@ -1,5 +1,4 @@
 const canvas = document.getElementById("canvas");
-const addBrowserButton = document.getElementById("add-browser");
 
 let nextZIndex = 2;
 let activeItem = null;
@@ -247,8 +246,4 @@ canvas.addEventListener("drop", (event) => {
 
 canvas.addEventListener("pointerdown", (event) => {
   if (event.target === canvas) setActive(null);
-});
-
-addBrowserButton.addEventListener("click", () => {
-  createCanvasItem("browser", "Internet Card", 80, 80);
 });
