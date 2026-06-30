@@ -8,7 +8,7 @@
   </head>
   <body>
     <div class="workspace">
-      <aside class="sidebar">
+      <aside id="asset-sidebar" class="sidebar">
         <section>
           <h2>Media Cards</h2>
           <button class="asset-card" draggable="true" data-kind="image" data-title="Image Card">Image</button>
@@ -24,6 +24,18 @@
           <p>Drop this into the canvas for a real Electron webview browser.</p>
         </section>
       </aside>
+
+      <button
+        id="sidebar-toggle"
+        class="sidebar-toggle"
+        type="button"
+        aria-controls="asset-sidebar"
+        aria-expanded="true"
+        aria-label="Hide sidebar"
+        title="Hide sidebar"
+      >
+        &#8249;
+      </button>
 
       <main id="canvas" class="canvas">
         <div class="empty-state">

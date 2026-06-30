@@ -1,4 +1,6 @@
 const canvas = document.getElementById("canvas");
+const workspace = document.querySelector(".workspace");
+const sidebarToggle = document.getElementById("sidebar-toggle");
 
 let nextZIndex = 2;
 let activeItem = null;
@@ -246,4 +248,14 @@ canvas.addEventListener("drop", (event) => {
 
 canvas.addEventListener("pointerdown", (event) => {
   if (event.target === canvas) setActive(null);
+});
+
+sidebarToggle.addEventListener("click", () => {
+  const isCollapsed = workspace.classList.toggle("sidebar-collapsed");
+  const action = isCollapsed ? "Show sidebar" : "Hide sidebar";
+
+  sidebarToggle.textContent = isCollapsed ? "\u203a" : "\u2039";
+  sidebarToggle.setAttribute("aria-expanded", String(!isCollapsed));
+  sidebarToggle.setAttribute("aria-label", action);
+  sidebarToggle.title = action;
 });
