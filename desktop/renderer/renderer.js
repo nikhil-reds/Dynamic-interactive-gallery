@@ -1,6 +1,11 @@
 const canvas = document.getElementById("canvas");
+const canvasSurface = document.getElementById("canvas-surface");
 const workspace = document.querySelector(".workspace");
 const sidebarToggle = document.getElementById("sidebar-toggle");
+const canvasZoomOut = document.getElementById("canvas-zoom-out");
+const canvasZoomReset = document.getElementById("canvas-zoom-reset");
+const canvasZoomIn = document.getElementById("canvas-zoom-in");
+const canvasZoomLabel = document.getElementById("canvas-zoom-label");
 const assetLists = {
   image: document.getElementById("image-assets"),
   video: document.getElementById("video-assets"),
@@ -14,6 +19,51 @@ const assetCounts = {
 
 let nextZIndex = 2;
 let activeItem = null;
+let canvasZoom = 1;
+let surfaceWidth = 12000;
+let surfaceHeight = 8000;
+
+function clamp(value, minimum, maximum) {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function updateSurfaceSize(width, height) {
+  surfaceWidth = Math.max(surfaceWidth, width);
+  surfaceHeight = Math.max(surfaceHeight, height);
+  canvasSurface.style.width = `${surfaceWidth}px`;
+  canvasSurface.style.height = `${surfaceHeight}px`;
+}
+
+function ensureSurfaceSpace(x, y, width = 0, height = 0) {
+  const growth = 4000;
+  const edgePadding = 1200;
+  let requiredWidth = surfaceWidth;
+  let requiredHeight = surfaceHeight;
+
+  while (x + width + edgePadding > requiredWidth) requiredWidth += growth;
+  while (y + height + edgePadding > requiredHeight) requiredHeight += growth;
+  updateSurfaceSize(requiredWidth, requiredHeight);
+}
+
+function clientToSurface(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: Math.max(0, (clientX - rect.left + canvas.scrollLeft) / canvasZoom),
+    y: Math.max(0, (clientY - rect.top + canvas.scrollTop) / canvasZoom),
+  };
+}
+
+function setCanvasZoom(nextZoom) {
+  const zoom = clamp(nextZoom, 0.35, 2.5);
+  const centerX = (canvas.scrollLeft + canvas.clientWidth / 2) / canvasZoom;
+  const centerY = (canvas.scrollTop + canvas.clientHeight / 2) / canvasZoom;
+
+  canvasZoom = zoom;
+  canvasSurface.style.zoom = String(canvasZoom);
+  canvasZoomLabel.textContent = `${Math.round(canvasZoom * 100)}%`;
+  canvas.scrollLeft = centerX * canvasZoom - canvas.clientWidth / 2;
+  canvas.scrollTop = centerY * canvasZoom - canvas.clientHeight / 2;
+}
 
 function normalizeUrl(value) {
   const trimmed = value.trim();
@@ -147,16 +197,31 @@ function createTrashIcon() {
   return icon;
 }
 
+function createToolButton(label, title, className = "") {
+  const button = document.createElement("button");
+  button.className = `tool-button icon-button ${className}`.trim();
+  button.type = "button";
+  button.textContent = label;
+  button.title = title;
+  button.setAttribute("aria-label", title);
+  return button;
+}
+
 function createCanvasItem(kind, title, x, y, src = "") {
   const item = document.createElement("section");
   item.className = "canvas-item";
   item.dataset.kind = kind;
   item.dataset.src = src;
+  const initialWidth = kind === "browser" ? 760 : kind === "pdf" ? 480 : 420;
+  const initialHeight = kind === "browser" ? 520 : kind === "pdf" ? 600 : 320;
   item.style.left = `${x}px`;
   item.style.top = `${y}px`;
-  item.style.width = kind === "browser" ? "760px" : kind === "pdf" ? "480px" : "420px";
-  item.style.height = kind === "browser" ? "520px" : kind === "pdf" ? "600px" : "320px";
+  item.style.width = `${initialWidth}px`;
+  item.style.height = `${initialHeight}px`;
   item.style.zIndex = String(nextZIndex++);
+  item.dataset.pinned = "false";
+  item.dataset.rotation = "0";
+  ensureSurfaceSpace(x, y, initialWidth, initialHeight);
 
   const header = document.createElement("div");
   header.className = "item-header";
@@ -168,6 +233,11 @@ function createCanvasItem(kind, title, x, y, src = "") {
   const tools = document.createElement("div");
   tools.className = "tool-row";
 
+  const pin = createToolButton("📌", "Pin card", "pin-button");
+  const zoomOut = createToolButton("−", "Zoom card out");
+  const zoomIn = createToolButton("+", "Zoom card in");
+  const rotate = kind === "image" ? createToolButton("↻", "Rotate image 90 degrees") : null;
+
   const close = document.createElement("button");
   close.className = "tool-button icon-button delete-button";
   close.type = "button";
@@ -175,6 +245,8 @@ function createCanvasItem(kind, title, x, y, src = "") {
   close.title = "Delete";
   close.append(createTrashIcon());
 
+  tools.append(pin, zoomOut, zoomIn);
+  if (rotate) tools.append(rotate);
   tools.append(close);
   header.append(itemTitle, tools);
 
@@ -187,9 +259,54 @@ function createCanvasItem(kind, title, x, y, src = "") {
   resizeHandle.title = "Resize";
 
   item.append(header, body, resizeHandle);
-  canvas.append(item);
-  canvas.querySelector(".empty-state")?.remove();
+  canvasSurface.append(item);
+  canvasSurface.querySelector(".empty-state")?.remove();
   setActive(item);
+
+  function setPinned(pinned) {
+    item.dataset.pinned = String(pinned);
+    item.classList.toggle("pinned", pinned);
+    pin.classList.toggle("active", pinned);
+    pin.textContent = pinned ? "📍" : "📌";
+    pin.title = pinned ? "Unpin card" : "Pin card";
+    pin.setAttribute("aria-label", pin.title);
+    resizeHandle.setAttribute("aria-hidden", String(pinned));
+  }
+
+  function scaleCard(factor) {
+    const width = clamp(item.offsetWidth * factor, 220, 1800);
+    const height = clamp(item.offsetHeight * factor, 180, 1400);
+    const left = Math.max(0, item.offsetLeft - (width - item.offsetWidth) / 2);
+    const top = Math.max(0, item.offsetTop - (height - item.offsetHeight) / 2);
+    item.style.left = `${left}px`;
+    item.style.top = `${top}px`;
+    item.style.width = `${width}px`;
+    item.style.height = `${height}px`;
+    ensureSurfaceSpace(left, top, width, height);
+  }
+
+  pin.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setPinned(item.dataset.pinned !== "true");
+    setActive(item);
+  });
+
+  zoomOut.addEventListener("click", (event) => {
+    event.stopPropagation();
+    scaleCard(0.85);
+  });
+
+  zoomIn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    scaleCard(1.15);
+  });
+
+  rotate?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const rotation = (Number(item.dataset.rotation) + 90) % 360;
+    item.dataset.rotation = String(rotation);
+    body.querySelector(".media-content").style.transform = `rotate(${rotation}deg)`;
+  });
 
   close.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -198,6 +315,7 @@ function createCanvasItem(kind, title, x, y, src = "") {
   });
 
   function beginMove(event) {
+    if (item.dataset.pinned === "true") return;
     const pointerId = event.pointerId;
     const startX = event.clientX;
     const startY = event.clientY;
@@ -207,8 +325,11 @@ function createCanvasItem(kind, title, x, y, src = "") {
 
     function move(pointerEvent) {
       if (pointerEvent.pointerId !== pointerId) return;
-      item.style.left = `${Math.max(0, initialLeft + pointerEvent.clientX - startX)}px`;
-      item.style.top = `${Math.max(0, initialTop + pointerEvent.clientY - startY)}px`;
+      const left = Math.max(0, initialLeft + (pointerEvent.clientX - startX) / canvasZoom);
+      const top = Math.max(0, initialTop + (pointerEvent.clientY - startY) / canvasZoom);
+      item.style.left = `${left}px`;
+      item.style.top = `${top}px`;
+      ensureSurfaceSpace(left, top, item.offsetWidth, item.offsetHeight);
     }
 
     function stop(pointerEvent) {
@@ -226,6 +347,7 @@ function createCanvasItem(kind, title, x, y, src = "") {
 
   item.addEventListener("pointerdown", (event) => {
     setActive(item);
+    if (item.dataset.pinned === "true") return;
     if (event.target.closest("button, input, form, video, webview, embed, .resize-handle")) return;
 
     event.preventDefault();
@@ -234,6 +356,7 @@ function createCanvasItem(kind, title, x, y, src = "") {
   });
 
   resizeHandle.addEventListener("pointerdown", (event) => {
+    if (item.dataset.pinned === "true") return;
     event.preventDefault();
     event.stopPropagation();
     setActive(item);
@@ -247,8 +370,11 @@ function createCanvasItem(kind, title, x, y, src = "") {
 
     function resize(pointerEvent) {
       if (pointerEvent.pointerId !== pointerId) return;
-      item.style.width = `${Math.max(220, initialWidth + pointerEvent.clientX - startX)}px`;
-      item.style.height = `${Math.max(180, initialHeight + pointerEvent.clientY - startY)}px`;
+      const width = Math.max(220, initialWidth + (pointerEvent.clientX - startX) / canvasZoom);
+      const height = Math.max(180, initialHeight + (pointerEvent.clientY - startY) / canvasZoom);
+      item.style.width = `${width}px`;
+      item.style.height = `${height}px`;
+      ensureSurfaceSpace(item.offsetLeft, item.offsetTop, width, height);
     }
 
     function stop(pointerEvent) {
@@ -315,9 +441,7 @@ function beginTouchCardDrag(event, card) {
     if (pointerEvent.pointerId !== pointerId) return;
 
     if (pointIsInsideCanvas(pointerEvent.clientX, pointerEvent.clientY)) {
-      const rect = canvas.getBoundingClientRect();
-      const x = pointerEvent.clientX - rect.left + canvas.scrollLeft;
-      const y = pointerEvent.clientY - rect.top + canvas.scrollTop;
+      const { x, y } = clientToSurface(pointerEvent.clientX, pointerEvent.clientY);
       const data = getCardData(card);
       createCanvasItem(data.kind, data.title, x, y, data.src);
     }
@@ -430,9 +554,7 @@ canvas.addEventListener("drop", (event) => {
   event.preventDefault();
   canvas.classList.remove("drag-over");
 
-  const rect = canvas.getBoundingClientRect();
-  const x = event.clientX - rect.left + canvas.scrollLeft;
-  const y = event.clientY - rect.top + canvas.scrollTop;
+  const { x, y } = clientToSurface(event.clientX, event.clientY);
   const raw = event.dataTransfer.getData("application/x-gallery-desktop-card");
   if (!raw) return;
 
@@ -441,8 +563,53 @@ canvas.addEventListener("drop", (event) => {
 });
 
 canvas.addEventListener("pointerdown", (event) => {
-  if (event.target === canvas) setActive(null);
+  if (event.target !== canvas && event.target !== canvasSurface) return;
+
+  setActive(null);
+  if (event.button !== 0) return;
+
+  event.preventDefault();
+  const pointerId = event.pointerId;
+  const startX = event.clientX;
+  const startY = event.clientY;
+  const initialScrollLeft = canvas.scrollLeft;
+  const initialScrollTop = canvas.scrollTop;
+  canvas.setPointerCapture(pointerId);
+  canvas.classList.add("panning");
+
+  function pan(pointerEvent) {
+    if (pointerEvent.pointerId !== pointerId) return;
+    canvas.scrollLeft = initialScrollLeft - (pointerEvent.clientX - startX);
+    canvas.scrollTop = initialScrollTop - (pointerEvent.clientY - startY);
+  }
+
+  function stopPan(pointerEvent) {
+    if (pointerEvent.pointerId !== pointerId) return;
+    window.removeEventListener("pointermove", pan);
+    window.removeEventListener("pointerup", stopPan);
+    window.removeEventListener("pointercancel", stopPan);
+    canvas.classList.remove("panning");
+    if (canvas.hasPointerCapture(pointerId)) canvas.releasePointerCapture(pointerId);
+  }
+
+  window.addEventListener("pointermove", pan);
+  window.addEventListener("pointerup", stopPan);
+  window.addEventListener("pointercancel", stopPan);
 });
+
+canvas.addEventListener(
+  "wheel",
+  (event) => {
+    if (!event.ctrlKey && !event.metaKey) return;
+    event.preventDefault();
+    setCanvasZoom(canvasZoom * (event.deltaY > 0 ? 0.9 : 1.1));
+  },
+  { passive: false }
+);
+
+canvasZoomOut.addEventListener("click", () => setCanvasZoom(canvasZoom - 0.1));
+canvasZoomReset.addEventListener("click", () => setCanvasZoom(1));
+canvasZoomIn.addEventListener("click", () => setCanvasZoom(canvasZoom + 0.1));
 
 sidebarToggle.addEventListener("click", () => {
   const isCollapsed = workspace.classList.toggle("sidebar-collapsed");
@@ -452,4 +619,10 @@ sidebarToggle.addEventListener("click", () => {
   sidebarToggle.setAttribute("aria-expanded", String(!isCollapsed));
   sidebarToggle.setAttribute("aria-label", action);
   sidebarToggle.title = action;
+});
+
+updateSurfaceSize(surfaceWidth, surfaceHeight);
+requestAnimationFrame(() => {
+  canvas.scrollLeft = (surfaceWidth - canvas.clientWidth) / 2;
+  canvas.scrollTop = (surfaceHeight - canvas.clientHeight) / 2;
 });

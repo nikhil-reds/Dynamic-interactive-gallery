@@ -48,9 +48,19 @@
       </button>
 
       <main id="canvas" class="canvas">
-        <div class="empty-state">
-          <strong>Drop cards here</strong>
-          <span>Use the internet card to browse directly inside the canvas.</span>
+        <div id="canvas-surface" class="canvas-surface">
+          <div class="empty-state">
+            <strong>Drop cards anywhere</strong>
+            <span>Pan the mesh, pin cards, and zoom the workspace.</span>
+          </div>
+        </div>
+
+        <div class="canvas-controls" aria-label="Canvas zoom controls">
+          <button id="canvas-zoom-out" type="button" title="Zoom canvas out" aria-label="Zoom canvas out">&#8722;</button>
+          <button id="canvas-zoom-reset" type="button" title="Reset canvas zoom">
+            <span id="canvas-zoom-label">100%</span>
+          </button>
+          <button id="canvas-zoom-in" type="button" title="Zoom canvas in" aria-label="Zoom canvas in">&#43;</button>
         </div>
       </main>
     </div>
