@@ -193,6 +193,8 @@ body {
   border-radius: 10px;
   font-size: 13px;
   font-weight: 800;
+  touch-action: none;
+  user-select: none;
 }
 
 .media-asset-card {
@@ -320,6 +322,8 @@ body {
   background: rgba(17, 24, 39, 0.98);
   cursor: move;
   padding: 0 10px;
+  touch-action: none;
+  user-select: none;
 }
 
 .item-title {
@@ -450,14 +454,28 @@ webview {
   background: white;
 }
 
+.touch-drag-preview {
+  position: fixed;
+  z-index: 1000;
+  width: 180px;
+  height: 72px;
+  margin: 0;
+  opacity: 0.88;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.96);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
+}
+
 .resize-handle {
   position: absolute;
   right: 0;
   bottom: 0;
-  width: 18px;
-  height: 18px;
+  width: 30px;
+  height: 30px;
   border-right: 2px solid #c7d2fe;
   border-bottom: 2px solid #c7d2fe;
   background: rgba(99, 102, 241, 0.25);
   cursor: nwse-resize;
+  touch-action: none;
+  user-select: none;
 }

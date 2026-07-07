@@ -197,32 +197,40 @@ function createCanvasItem(kind, title, x, y, src = "") {
     if (activeItem === item) activeItem = null;
   });
 
-  item.addEventListener("pointerdown", () => setActive(item));
-
-  header.addEventListener("pointerdown", (event) => {
-    if (event.target.closest("button")) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-    setActive(item);
-
+  function beginMove(event) {
+    const pointerId = event.pointerId;
     const startX = event.clientX;
     const startY = event.clientY;
     const initialLeft = item.offsetLeft;
     const initialTop = item.offsetTop;
+    item.setPointerCapture(pointerId);
 
     function move(pointerEvent) {
+      if (pointerEvent.pointerId !== pointerId) return;
       item.style.left = `${Math.max(0, initialLeft + pointerEvent.clientX - startX)}px`;
       item.style.top = `${Math.max(0, initialTop + pointerEvent.clientY - startY)}px`;
     }
 
-    function stop() {
+    function stop(pointerEvent) {
+      if (pointerEvent.pointerId !== pointerId) return;
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", stop);
+      window.removeEventListener("pointercancel", stop);
+      if (item.hasPointerCapture(pointerId)) item.releasePointerCapture(pointerId);
     }
 
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", stop);
+    window.addEventListener("pointercancel", stop);
+  }
+
+  item.addEventListener("pointerdown", (event) => {
+    setActive(item);
+    if (event.target.closest("button, input, form, video, webview, embed, .resize-handle")) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    beginMove(event);
   });
 
   resizeHandle.addEventListener("pointerdown", (event) => {
@@ -230,40 +238,113 @@ function createCanvasItem(kind, title, x, y, src = "") {
     event.stopPropagation();
     setActive(item);
 
+    const pointerId = event.pointerId;
     const startX = event.clientX;
     const startY = event.clientY;
     const initialWidth = item.offsetWidth;
     const initialHeight = item.offsetHeight;
+    resizeHandle.setPointerCapture(pointerId);
 
     function resize(pointerEvent) {
+      if (pointerEvent.pointerId !== pointerId) return;
       item.style.width = `${Math.max(220, initialWidth + pointerEvent.clientX - startX)}px`;
       item.style.height = `${Math.max(180, initialHeight + pointerEvent.clientY - startY)}px`;
     }
 
-    function stop() {
+    function stop(pointerEvent) {
+      if (pointerEvent.pointerId !== pointerId) return;
       window.removeEventListener("pointermove", resize);
       window.removeEventListener("pointerup", stop);
+      window.removeEventListener("pointercancel", stop);
+      if (resizeHandle.hasPointerCapture(pointerId)) resizeHandle.releasePointerCapture(pointerId);
     }
 
     window.addEventListener("pointermove", resize);
     window.addEventListener("pointerup", stop);
+    window.addEventListener("pointercancel", stop);
   });
 
   return item;
+}
+
+function getCardData(card) {
+  return {
+    kind: card.dataset.kind,
+    title: card.dataset.title,
+    src: card.dataset.src || "",
+  };
+}
+
+function pointIsInsideCanvas(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+}
+
+function beginTouchCardDrag(event, card) {
+  if (event.pointerType === "mouse" || !event.isPrimary || event.button !== 0) return;
+
+  event.preventDefault();
+  const pointerId = event.pointerId;
+  const preview = card.cloneNode(true);
+  preview.classList.add("touch-drag-preview");
+  preview.setAttribute("aria-hidden", "true");
+  document.body.append(preview);
+
+  function positionPreview(pointerEvent) {
+    preview.style.left = `${pointerEvent.clientX}px`;
+    preview.style.top = `${pointerEvent.clientY}px`;
+    canvas.classList.toggle("drag-over", pointIsInsideCanvas(pointerEvent.clientX, pointerEvent.clientY));
+  }
+
+  function cleanup() {
+    preview.remove();
+    canvas.classList.remove("drag-over");
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", drop);
+    window.removeEventListener("pointercancel", cancel);
+    if (card.hasPointerCapture(pointerId)) card.releasePointerCapture(pointerId);
+  }
+
+  function move(pointerEvent) {
+    if (pointerEvent.pointerId !== pointerId) return;
+    pointerEvent.preventDefault();
+    positionPreview(pointerEvent);
+  }
+
+  function drop(pointerEvent) {
+    if (pointerEvent.pointerId !== pointerId) return;
+
+    if (pointIsInsideCanvas(pointerEvent.clientX, pointerEvent.clientY)) {
+      const rect = canvas.getBoundingClientRect();
+      const x = pointerEvent.clientX - rect.left + canvas.scrollLeft;
+      const y = pointerEvent.clientY - rect.top + canvas.scrollTop;
+      const data = getCardData(card);
+      createCanvasItem(data.kind, data.title, x, y, data.src);
+    }
+    cleanup();
+  }
+
+  function cancel(pointerEvent) {
+    if (pointerEvent.pointerId === pointerId) cleanup();
+  }
+
+  card.setPointerCapture(pointerId);
+  positionPreview(event);
+  window.addEventListener("pointermove", move, { passive: false });
+  window.addEventListener("pointerup", drop);
+  window.addEventListener("pointercancel", cancel);
 }
 
 function makeCardDraggable(card) {
   card.addEventListener("dragstart", (event) => {
     event.dataTransfer.setData(
       "application/x-gallery-desktop-card",
-      JSON.stringify({
-        kind: card.dataset.kind,
-        title: card.dataset.title,
-        src: card.dataset.src || "",
-      })
+      JSON.stringify(getCardData(card))
     );
     event.dataTransfer.effectAllowed = "copy";
   });
+
+  card.addEventListener("pointerdown", (event) => beginTouchCardDrag(event, card));
 }
 
 function createAssetPreview(asset) {
