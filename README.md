@@ -4,7 +4,7 @@ Web-to-desktop interactive gallery builder. Paste or choose HTML/CSS/JS gallery 
 
 ## What It Does
 
-Gallery is a Next.js app for building local media gallery experiences without hand-packaging a desktop app every time.
+ - is a Next.js app for building local media gallery experiences without hand-packaging a desktop app every time.
 
 - Preview responsive gallery templates in desktop, tablet, and mobile widths.
 - Render images, videos, and PDFs into template placeholders.
